@@ -64,7 +64,8 @@ export async function createGuestPins() {
             lastName: names.join(' '),
             accessStartTime: new Date(Date.parse(r.checkIn)),
             accessEndTime: new Date(Date.parse(r.checkOut)),
-            pin: r.checkInDateLocalized.split('-')[2] + r.checkOutDateLocalized.split('-')[2],
+            // pin: r.checkInDateLocalized.split('-')[2] + r.checkOutDateLocalized.split('-')[2],
+            pin: r.checkInDateLocalized.split('-')[1] + r.checkInDateLocalized.split('-')[2],
             lockID: config.AUGUST_LOCK
         };
     });
