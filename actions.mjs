@@ -82,10 +82,16 @@ export async function createGuestPins() {
     
     console.log(`${newcodes.length} guests require an access code which has yet to be created`);
 
-    newcodes.forEach(async (pin) => {
-        console.log(`Creating guest access code for ${pin.firstName} ${pin.lastName.charAt(0)}`);
-        await august.createGuestEntryPin(pin);
-    });
+    // commit these one-at-a-time and wait for previous to finish first
+    async function commit() {
+        if (newcodes.length > 0) {
+            const pin = newcodes.shift();
+            console.log(`Creating guest access code for ${pin.firstName} ${pin.lastName.charAt(0)}`);
+            await august.createGuestEntryPin(pin);
+            await commit();
+        }
+    }
 
+    await commit();
     console.log('Done!');
 }
