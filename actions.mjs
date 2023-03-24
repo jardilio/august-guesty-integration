@@ -52,7 +52,7 @@ export async function createGuestPins() {
         .map(d => d.blockRefs)
         .forEach(blockRefs => blockRefs
             .map(blockRef => blockRef.reservation)
-            .filter(r => r && r.status == 'confirmed')
+            .filter(r => r && r.status == 'confirmed' && r.fullName) //fullName is missing on owner reservations...skip
             .forEach(r => reservations[r._id] = r)
         );
 
