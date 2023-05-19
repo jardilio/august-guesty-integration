@@ -139,7 +139,7 @@ export default class AugustClient extends JSONClient {
                 case 'enabled':
                 case 'enabling':
                     console.debug(`Waiting...user ${user.id} is still in the ${state} state.`);
-                    await new Promise(r => setTimeout(r, 2000));
+                    await new Promise(r => setTimeout(r, 30000));
                     break;
                 default:
                     console.log(match, pins);
