@@ -21,6 +21,7 @@ env:
 
 jobs:
   run:
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     container: node:18-alpine
     steps:
