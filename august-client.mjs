@@ -142,7 +142,7 @@ export default class AugustClient extends JSONClient {
                     await new Promise(r => setTimeout(r, 30000));
                     break;
                 default:
-                    console.log(match, pins);
+                    // console.log(match, pins);
                     throw new Error(`User ${user.id} is in the unexpected ${state} state!`);
                     break;
             }
