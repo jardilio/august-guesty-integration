@@ -71,8 +71,9 @@ export default class AugustClient extends JSONClient {
         const session = await response.json();
         this.#userId = session.userId;
 
-        let locks = await this.fetch('users/locks/mine');
-        console.log(locks.json());
+        const response2 = await this.fetch('users/locks/mine');
+        const locks = await response2.json();
+        console.log(locks);
 
         return session;
     }
