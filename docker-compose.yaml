@@ -10,3 +10,5 @@ services:
   console: 
     <<: *app
     entrypoint: sh
+    env_file:
+      - .env
