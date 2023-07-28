@@ -17,6 +17,12 @@ const august = new AugustClient({
     apiKey: config.AUGUST_API_KEY
 });
 
+export async function getLocks() {
+    await august.session();
+    let response = await august.fetch('users/locks/mine');
+    console.log(response.json());
+}
+
 /**
  * Use to validate the apiKey and installId for this application with MFA, 
  * only need to do this once for apiKey and installId. Run again if either 
@@ -44,7 +50,7 @@ export async function createGuestPins() {
     console.log('Finding reservations...');
     const days = await guesty.getCalendar({listing: config.GUESTY_LISTING});
     const reservations = {};
-
+    
     // reservations repeat in blocks, find unique reservations and store in a hash
     // there can be multiple reservations in a given day considering checkout/checkin times
     days

@@ -14,7 +14,7 @@ export default class GuestyClient extends JSONClient {
      * @returns 
      */
      constructor(config) {
-        super('https://api.guesty.com/api/v2/', {
+        super('https://app.guesty.com/api/v2/', {
             "accept": "application/json, text/plain, */*",
             "accept-language": "en-US,en;q=0.9",
             "authorization": "Bearer undefined",
@@ -26,7 +26,8 @@ export default class GuestyClient extends JSONClient {
             "sec-fetch-mode": "cors",
             "sec-fetch-site": "cross-site",
             "Referer": "https://owneraccess.guestyowners.com/",
-            "Referrer-Policy": "strict-origin-when-cross-origin"
+            "Referrer-Policy": "strict-origin-when-cross-origin",
+            "G-Aid-Cs": "G-89C7E-9FB65-B6F69"
         });
         this.#config = config;
     }
