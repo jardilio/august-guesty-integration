@@ -64,6 +64,7 @@ export async function createGuestPins() {
 
     // build a list of guest pin codes to create for the reservation block
     const pincodes = Object.values(reservations).map(r => {
+        console.log(JSON.stringify(r, null, 2);
         const names = (r.guest.fullName || "Unknown Guest").split(' ');
         return {
             firstName: names.shift(),
