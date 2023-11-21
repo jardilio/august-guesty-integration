@@ -58,14 +58,13 @@ export async function createGuestPins() {
         .map(d => d.blockRefs)
         .forEach(blockRefs => blockRefs
             .map(blockRef => blockRef.reservation)
-            .filter(r => r && r.status == 'confirmed') // && r.fullName) //fullName is missing on owner reservations...skip
+            .filter(r => r && r.status == 'confirmed')
             .forEach(r => reservations[r._id] = r)
         );
 
     // build a list of guest pin codes to create for the reservation block
     const pincodes = Object.values(reservations).map(r => {
-        console.log(JSON.stringify(r, null, 2));
-        const names = (r.guest.fullName || "Unknown Guest").split(' ');
+        const names = (r.guest || r.owner).fullName.split(' ');
         return {
             firstName: names.shift(),
             lastName: names.join(' '),
