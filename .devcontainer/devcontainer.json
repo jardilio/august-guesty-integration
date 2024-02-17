@@ -1,0 +1,13 @@
+{
+    "image": "mcr.microsoft.com/devcontainers/typescript-node:0-18",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode-remote.remote-containers",
+                "ms-azuretools.vscode-docker",
+                "dbaeumer.vscode-eslint",
+                "github.vscode-github-actions"
+            ]
+        }
+    }
+}
