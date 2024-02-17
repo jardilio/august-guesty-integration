@@ -83,9 +83,6 @@ export async function createGuestPins() {
 
     console.log(`Found ${pincodes.length} upcoming guest reservations`);
 
-    console.log(pincodes);
-    process.exit();
-
     await august.session();
 
     // get existing guest access codes from lock and find reservation blocks not yet created
