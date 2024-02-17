@@ -33,4 +33,4 @@ jobs:
         run: npm install
 
       - name: Execute
-        run: node . createGuestPins
+        run: node . dumpConfig

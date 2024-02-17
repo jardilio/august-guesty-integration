@@ -1,7 +1,8 @@
 import GuestyClient from "./guesty-client.mjs"
 import AugustClient from "./august-client.mjs";
 import Prompt from 'prompt-sync';
-import * as config from "./config.mjs"
+import * as config from "./config.mjs";
+import fs from "node:fs";
 
 const guesty = new GuestyClient({
     username: config.GUESTY_USERNAME,
@@ -21,6 +22,10 @@ export async function getLocks() {
     await august.session();
     let response = await august.fetch('users/locks/mine');
     console.log(response.json());
+}
+
+export function dumpConfig() {
+    fs.writeFileSync('config.json', JSON.stringify(config, null, 2));
 }
 
 /**
@@ -77,6 +82,9 @@ export async function createGuestPins() {
     });
 
     console.log(`Found ${pincodes.length} upcoming guest reservations`);
+
+    console.log(pincodes);
+    process.exit();
 
     await august.session(); 
 
