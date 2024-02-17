@@ -53,9 +53,9 @@ export async function createGuestPins() {
 
     // get calendar of days which may or may not contain reservation blocks
     console.log('Finding reservations...');
-    const days = await guesty.getCalendar({listing: config.GUESTY_LISTING});
+    const days = await guesty.getCalendar({ listing: config.GUESTY_LISTING });
     const reservations = {};
-    
+
     // reservations repeat in blocks, find unique reservations and store in a hash
     // there can be multiple reservations in a given day considering checkout/checkin times
     days
@@ -86,14 +86,14 @@ export async function createGuestPins() {
     console.log(pincodes);
     process.exit();
 
-    await august.session(); 
+    await august.session();
 
     // get existing guest access codes from lock and find reservation blocks not yet created
     const existing = await august.getLockPins(config.AUGUST_LOCK);
     const newcodes = pincodes.filter(pincode => {
-        return ![].concat(existing.loaded,existing.created).find(e => e.firstName == pincode.firstName && e.lastName == pincode.lastName);
+        return ![].concat(existing.loaded, existing.created).find(e => e.firstName == pincode.firstName && e.lastName == pincode.lastName);
     });
-    
+
     console.log(`${newcodes.length} guests require an access code which has yet to be created`);
 
     // commit these one-at-a-time and wait for previous to finish first
