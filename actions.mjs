@@ -21,7 +21,7 @@ const august = new AugustClient({
 export async function getLocks() {
     await august.session();
     let response = await august.fetch('users/locks/mine');
-    console.log(response.json());
+    console.log(await response.json());
 }
 
 export function dumpConfig() {
