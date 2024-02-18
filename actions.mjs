@@ -66,7 +66,7 @@ export async function createGuestPins() {
             .filter(r => r && r.status == 'confirmed')
             .forEach(r => reservations[r._id] = r)
         );
-
+    
     // build a list of guest pin codes to create for the reservation block
     const pincodes = Object.values(reservations).map(r => {
         const names = (r.guest || r.owner).fullName.split(' ');
@@ -77,7 +77,8 @@ export async function createGuestPins() {
             accessEndTime: new Date(Date.parse(r.checkOut)),
             // pin: r.checkInDateLocalized.split('-')[2] + r.checkOutDateLocalized.split('-')[2],
             pin: r.checkInDateLocalized.split('-')[1] + r.checkInDateLocalized.split('-')[2],
-            lockID: config.AUGUST_LOCK
+            lockID: config.AUGUST_LOCK,
+            reservationId: r._id
         };
     });
 
@@ -97,6 +98,11 @@ export async function createGuestPins() {
     async function commit() {
         if (newcodes.length > 0) {
             const pin = newcodes.shift();
+            // fetch the reservation details to get to guest phone number for default pin code, if available
+            const res = await guesty.getReservation(pin.reservationId);
+            const guest = (res.guest || res.owner);
+            delete pin.reservationId;
+            pin.pin = guest && guest.phone ? guest.phone.trim().slice(-4) : pin.pin;
             console.log(`Creating guest access code for ${pin.firstName} ${pin.lastName.charAt(0)}`);
             await august.createGuestEntryPin(pin);
             await commit();

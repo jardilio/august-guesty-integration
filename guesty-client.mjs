@@ -72,4 +72,14 @@ export default class GuestyClient extends JSONClient {
 
         return response.json();
     }
+
+    /**
+     * Returns reservation details, including guest information not available in calander object
+     * @param {string} reservationId 
+     * @returns 
+     */
+    async getReservation(reservationId) {
+        const response = await this.fetch(`reservations/${reservationId}`);
+        return response.json();
+    }
 }
