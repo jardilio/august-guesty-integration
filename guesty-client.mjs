@@ -82,4 +82,17 @@ export default class GuestyClient extends JSONClient {
         const response = await this.fetch(`reservations/${reservationId}`);
         return response.json();
     }
+
+    /**
+     * Returns a list of reservation summaries
+     * @param {Number} skip The number of reservations to skip from previous loads (pagination)
+     * @param {Number} limit The number of reservations to pull in this request (pagination)
+     * @param {Array} fields The fields to return in the reservation summary (default ['checkIn', 'checkOut', 'confirmationCode', 'guest.fullName', 'guest.phone'])
+     * @returns 
+     */
+    async getReservations(skip = 0, limit = 25, fields = null) {
+        fields = fields || ['checkIn', 'checkOut', 'confirmationCode', 'guest.fullName', 'guest.phone'];
+        const response = await this.fetch(`reservations?limit=${limit}&skip=${skip}&fields=${encodeURIComponent(fields.join(' '))}`);
+        return response.json();
+    }
 }
