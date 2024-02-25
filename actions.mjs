@@ -3,6 +3,7 @@ import AugustClient from "./august-client.mjs";
 import Prompt from 'prompt-sync';
 import * as config from "./config.mjs";
 import fs from "node:fs";
+import { google, Auth } from "googleapis";
 
 const guesty = new GuestyClient({
     username: config.GUESTY_USERNAME,
@@ -51,7 +52,14 @@ export async function validateAugust() {
 export async function createGuestPins() {
     const today = new Date(); 
     const limit = new Date(today.setDate(today.getDate() + 7)).toISOString();
-    
+    const fields = [
+        'checkIn', 
+        'checkOut', 
+        'guest.firstName', 
+        'guest.lastName',
+        'guest.phone'
+    ];
+
     console.log(`Finding reservations before ${limit}`);
 
     await guesty.authenticate();
@@ -59,10 +67,9 @@ export async function createGuestPins() {
     const pincodes = reservations.results
         .filter(r => !!r.guest && r.checkIn < limit)
         .map(r => {
-            const names =r.guest.fullName.split(' ');
             return {
-                firstName: names.shift(),
-                lastName: names.join(' '),
+                firstName: r.guest.firstName,
+                lastName: r.guest.lastName,
                 accessStartTime: new Date(Date.parse(r.checkIn)),
                 accessEndTime: new Date(Date.parse(r.checkOut)),
                 pin: r.guest.phone ? r.guest.phone.trim().slice(-4) : r.checkIn.split('-')[1] + r.checkIn.split('-')[2],
@@ -93,5 +100,79 @@ export async function createGuestPins() {
     }
 
     await commit();
+    console.log('Done!');
+}
+
+export async function createCalendarEvents() {
+    const fields = [
+        'source',
+        'confirmationCode',
+        'listing.address.full',
+        'listing.nickname',
+        'guest.fullName', 
+        'money.hostPayout',
+        'money.netIncome',
+        'money.ownerRevenue',
+        'money.commission',
+        'isReturningGuest',
+        'nightsCount',
+        'guestsCount',
+        'status',
+        'checkIn',
+        'checkOut'
+    ];
+
+    const auth = await new Auth.GoogleAuth({
+            scopes: ['https://www.googleapis.com/auth/calendar.events'],
+            credentials: JSON.parse(config.GOOGLE_CREDENTIALS)
+        }).getClient();
+    const calendar = google.calendar({version: 'v3', auth});
+    const existingEvents = Object.fromEntries((await calendar.events.list({
+        calendarId: config.GOOGLE_CALENDAR_ID,
+        timeMin: new Date().toISOString(),
+        maxResults: 50,
+        singleEvents: true,
+        orderBy: 'startTime',
+    })).data.items.map(e => [e.extendedProperties.private.confirmationCode, e]));
+    
+    console.log(`Found ${Object.keys(existingEvents).length} existing calendar entries`);
+
+    await guesty.authenticate();
+    const reservations = (await guesty.getReservations(0, 25, fields))
+        .results
+        .filter(r => !!r.guest)
+        .map(r => {
+            r.money.netIncome = r.money.netIncome || r.money.commission / .2;
+            r.money.ownerRevenue = r.money.ownerRevenue || r.money.netIncome - r.money.commission;
+            r.description = `${r.guest.fullName} is ${!r.isReturningGuest ? 'not' : ''} a returning guest and ${r.guestsCount} total guests staying at ${r.listing.nickname} for ${r.nightsCount} nights. Reservation ${r.confirmationCode} is ${r.status} on ${r.source} for a total cost of $${r.money.hostPayout} with a net income of $${r.money.netIncome} and estimated owner revenue of $${r.money.ownerRevenue}.`;
+            return r;
+        });
+
+    console.log(`Found ${reservations.length} reservations`);
+
+    const newEvents = reservations
+        .filter(r => !existingEvents[r.confirmationCode])
+        .map(r => calendar.events.insert({
+            calendarId: config.GOOGLE_CALENDAR_ID,
+            requestBody: {
+                extendedProperties: {
+                    private: {
+                        confirmationCode: r.confirmationCode
+                    }
+                },
+                start: {dateTime: r.checkIn},
+                end: {dateTime: r.checkOut},
+                location: r.listing.address.full,
+                summary: r.guest.fullName,
+                description: r.description
+            }
+        }));
+
+    console.log(`Creating ${newEvents.length} new calendar entries`);
+
+    //TODO: Update existing and delete canceled events
+
+    await Promise.all(newEvents);
+
     console.log('Done!');
 }

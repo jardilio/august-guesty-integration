@@ -1,0 +1,33 @@
+# 1/20/24
+name: Create Calendar Events
+
+on:
+  workflow_dispatch:
+  schedule: 
+    # once daily at 12a
+    - cron: '0 0 * * *'
+
+env:
+  GUESTY_USERNAME: ${{ secrets.GUESTY_USERNAME }}
+  GUESTY_PASSWORD: ${{ secrets.GUESTY_PASSWORD }}
+  GUESTY_LISTING: ${{ secrets.GUESTY_LISTING }}
+  GUESTY_ACCOUNT: ${{ secrets.GUESTY_ACCOUNT }}
+  GUESTY_API_KEY: ${{ secrets.GUESTY_API_KEY }}
+  GOOGLE_CALENDAR_ID: ${{ secrets.GOOGLE_CALENDAR_ID }}
+  GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+
+jobs:
+  run:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    container: node:18-alpine
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: NPM Install
+        run: npm install
+
+      - name: Execute
+        run: node . createCalendarEvents
