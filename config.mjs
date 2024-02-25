@@ -12,5 +12,7 @@ export const {
     AUGUST_PASSWORD,
     AUGUST_IDENTIFIER,
     AUGUST_API_KEY,
-    AUGUST_LOCK
+    AUGUST_LOCK,
+    GOOGLE_CREDENTIALS,
+    GOOGLE_CALENDAR_ID
 } = process.env;
