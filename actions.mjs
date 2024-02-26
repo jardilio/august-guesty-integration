@@ -3,7 +3,13 @@ import AugustClient from "./august-client.mjs";
 import Prompt from 'prompt-sync';
 import * as config from "./config.mjs";
 import fs from "node:fs";
+import crypto from "node:crypto";
 import { google, Auth } from "googleapis";
+
+const UsDollars = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+});
 
 const guesty = new GuestyClient({
     username: config.GUESTY_USERNAME,
@@ -50,6 +56,7 @@ export async function validateAugust() {
  * during the time of their stay.
  */
 export async function createGuestPins() {
+    const hash = crypto('sha256');
     const today = new Date(); 
     const limit = new Date(today.setDate(today.getDate() + 7)).toISOString();
     const fields = [
@@ -144,7 +151,8 @@ export async function createCalendarEvents() {
         .map(r => {
             r.money.netIncome = r.money.netIncome || r.money.commission / .2;
             r.money.ownerRevenue = r.money.ownerRevenue || r.money.netIncome - r.money.commission;
-            r.description = `${r.guest.fullName} is ${!r.isReturningGuest ? 'not' : ''} a returning guest and ${r.guestsCount} total guests staying at ${r.listing.nickname} for ${r.nightsCount} nights. Reservation ${r.confirmationCode} is ${r.status} on ${r.source} for a total cost of $${r.money.hostPayout} with a net income of $${r.money.netIncome} and estimated owner revenue of $${r.money.ownerRevenue}.`;
+            r.description = `${r.guest.fullName} is ${r.isReturningGuest ? 'returning' : 'new'} guest with ${r.guestsCount} total guests staying at ${r.listing.nickname} for ${r.nightsCount} nights. Reservation ${r.confirmationCode} is ${r.status} on ${r.source} for a total cost of ${UsDollars.format(r.money.hostPayout)} with a net income of ${UsDollars.format(r.money.netIncome)} and estimated owner revenue of ${UsDollars.format(r.money.ownerRevenue)}.`;
+            r.lastUpdated = r.log && r.log[0] ? r.log[0].at : r.createdAt;
             return r;
         });
 
@@ -157,7 +165,8 @@ export async function createCalendarEvents() {
             requestBody: {
                 extendedProperties: {
                     private: {
-                        confirmationCode: r.confirmationCode
+                        confirmationCode: r.confirmationCode,
+                        lastUpdated: r.lastUpdated
                     }
                 },
                 start: {dateTime: r.checkIn},
@@ -169,6 +178,28 @@ export async function createCalendarEvents() {
         }));
 
     console.log(`Creating ${newEvents.length} new calendar entries`);
+
+    const updatedEvents = reservations
+        .filter(r => existingEvents[r.confirmationCode] && (r.lastUpdated != existingEvents[r.confirmationCode].extendedProperties.private.lastUpdated || r.description != existingEvents[r.confirmationCode].description))
+        .map(r => calendar.events.update({
+            calendarId: config.GOOGLE_CALENDAR_ID,
+            eventId: existingEvents[r.confirmationCode].id,
+            requestBody: {
+                extendedProperties: {
+                    private: {
+                        confirmationCode: r.confirmationCode,
+                        lastUpdated: r.lastUpdated
+                    }
+                },
+                start: {dateTime: r.checkIn},
+                end: {dateTime: r.checkOut},
+                location: r.listing.address.full,
+                summary: r.guest.fullName,
+                description: r.description
+            }
+        }));
+
+    console.log(`Updating ${updatedEvents.length} existing calendar entries`);
 
     //TODO: Update existing and delete canceled events
 
