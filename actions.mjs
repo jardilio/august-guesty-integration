@@ -61,8 +61,7 @@ export async function createGuestPins() {
     const fields = [
         'checkIn', 
         'checkOut', 
-        'guest.firstName', 
-        'guest.lastName',
+        'guest.fullName',
         'guest.phone'
     ];
 
@@ -73,9 +72,10 @@ export async function createGuestPins() {
     const pincodes = reservations.results
         .filter(r => !!r.guest && r.checkIn < limit)
         .map(r => {
+            const names = r.guest.fullName.split(" ");
             return {
-                firstName: r.guest.firstName,
-                lastName: r.guest.lastName,
+                firstName: names[0],
+                lastName: names[1],
                 accessStartTime: new Date(Date.parse(r.checkIn)),
                 accessEndTime: new Date(Date.parse(r.checkOut)),
                 pin: r.guest.phone ? r.guest.phone.trim().slice(-4) : r.checkIn.split('-')[1] + r.checkIn.split('-')[2],
