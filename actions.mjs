@@ -151,7 +151,7 @@ export async function createCalendarEvents() {
         .map(r => {
             r.money.netIncome = r.money.netIncome || r.money.commission / .2;
             r.money.ownerRevenue = r.money.ownerRevenue || r.money.netIncome - r.money.commission;
-            r.description = `${r.guest.fullName} is ${r.isReturningGuest ? 'returning' : 'new'} guest with ${r.guestsCount} total guests staying at ${r.listing.nickname} for ${r.nightsCount} nights. Reservation ${r.confirmationCode} is ${r.status} on ${r.source} for a total cost of ${UsDollars.format(r.money.hostPayout)} with a net income of ${UsDollars.format(r.money.netIncome)} and estimated owner revenue of ${UsDollars.format(r.money.ownerRevenue)}.`;
+            r.description = `${r.guest.fullName} is ${r.isReturningGuest ? 'returning' : 'new'} guest with ${r.guestsCount} total guests staying at ${r.listing.nickname} for ${r.nightsCount} nights. Reservation ${r.confirmationCode} is ${r.status} on ${r.source} for a total cost of ${UsDollars.format(r.money.hostPayout)} with a net income of ${UsDollars.format(r.money.netIncome)} and estimated owner revenue of ${UsDollars.format(r.money.ownerRevenue)}. The average nightly revenue is ${UsDollars.format(r.money.ownerRevenue / r.nightsCount)} per night.`;
             r.lastUpdated = r.log && r.log[0] ? r.log[0].at : r.createdAt;
             return r;
         });
