@@ -56,7 +56,6 @@ export async function validateAugust() {
  * during the time of their stay.
  */
 export async function createGuestPins() {
-    const hash = crypto('sha256');
     const today = new Date(); 
     const limit = new Date(today.setDate(today.getDate() + 7)).toISOString();
     const fields = [
