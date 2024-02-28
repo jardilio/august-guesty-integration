@@ -2,6 +2,7 @@
 name: Create Calendar Events
 
 on:
+  push: 
   workflow_dispatch:
   schedule: 
     # once daily at 12a

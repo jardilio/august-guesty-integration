@@ -206,3 +206,27 @@ export async function createCalendarEvents() {
 
     console.log('Done!');
 }
+
+export async function exportReservationReports() {
+    const fields = [
+        'source',
+        'confirmationCode',
+        'listing.address.full',
+        'listing.nickname',
+        'guest.fullName', 
+        'money.hostPayout',
+        'money.netIncome',
+        'money.ownerRevenue',
+        'money.commission',
+        'isReturningGuest',
+        'nightsCount',
+        'guestsCount',
+        'status',
+        'checkIn',
+        'checkOut'
+    ];
+
+    await guesty.authenticate();
+    const reservations = (await guesty.getReservations(0, 25, fields, {field: 'checkIn', operator: '$lt', value: 0, context: 'now'}));
+    console.log(reservations);
+}
