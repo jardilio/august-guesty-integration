@@ -166,8 +166,9 @@ export async function createCalendarEvents() {
     const updatedEvents = resEvents
         .filter(r => {
             const existing = existingEvents[r.extendedProperties.private.confirmationCode];
-            return existing && existing.extendedProperties.hash !== r.extendedProperties.private.hash;
+            return existing && existing.extendedProperties.private.hash !== r.extendedProperties.private.hash;
         })
+        .map(r => r.id = existingEvents[r.extendedProperties.private.confirmationCode].id)
         /*.map(r => calendar.events.update({
             calendarId: config.GOOGLE_CALENDAR_ID,
             eventId: existingEvents[r.extendedProperties.private.confirmationCode].id,
