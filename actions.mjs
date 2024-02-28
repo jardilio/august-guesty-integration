@@ -244,11 +244,6 @@ export async function exportReservationReports() {
             operator: '$lt',
             value: 0,
             context: 'now'
-        },
-        {
-            field: 'status',
-            operator: '$not',
-            value: 'confirmed'
         }
     ];
 
