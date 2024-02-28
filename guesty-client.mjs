@@ -93,7 +93,7 @@ export default class GuestyClient extends JSONClient {
      */
     async getReservations(skip = 0, limit = 25, fields = null, filters = []) {
         fields = fields || ['checkIn', 'checkOut', 'confirmationCode', 'guest.fullName', 'guest.phone'];
-        const response = await this.fetch(`reservations?limit=${limit}&skip=${skip}&fields=${encodeURIComponent(fields.join(' '))}&filters=${JSON.stringify(filters)}}`);
+        const response = await this.fetch(`reservations?limit=${limit}&skip=${skip}&fields=${encodeURIComponent(fields.join(' '))}&filters=${JSON.stringify(filters)}`);
         return response.json();
     }
 }
