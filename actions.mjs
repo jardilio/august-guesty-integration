@@ -147,7 +147,7 @@ export async function createCalendarEvents() {
     const resEvents = (await guesty.getReservations(0, 25, fields))
         .results
         .filter(r => !!r.guest)
-        .map(getCalendarEventFromReservation);
+        .map(r => getCalendarEventFromReservation(r));
 
     console.log(`Found ${resEvents.length} reservations`);
 
@@ -249,5 +249,5 @@ export async function exportReservationReports() {
 
     await guesty.authenticate();
     const reservations = await guesty.getReservations(0, 25, fields, filters);
-    console.log(reservations);
+    // console.log(reservations);
 }
