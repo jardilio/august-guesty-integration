@@ -91,7 +91,7 @@ export default class GuestyClient extends JSONClient {
      * @param {Array} filters The filters to apply for searching reservations
      * @returns 
      */
-    async getReservations(skip = 0, limit = 25, fields = null, filters: []) {
+    async getReservations(skip = 0, limit = 25, fields = null, filters = []) {
         fields = fields || ['checkIn', 'checkOut', 'confirmationCode', 'guest.fullName', 'guest.phone'];
         const response = await this.fetch(`reservations?limit=${limit}&skip=${skip}&fields=${encodeURIComponent(fields.join(' '))}&filters=${JSON.stringify(filters)}}`);
         return response.json();
