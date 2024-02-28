@@ -226,7 +226,16 @@ export async function exportReservationReports() {
         'checkOut'
     ];
 
+    const filters = [
+        {
+            field: 'checkIn',
+            operator: '$lt',
+            value: 0,
+            context: 'now'
+        }
+    ];
+
     await guesty.authenticate();
-    const reservations = (await guesty.getReservations(0, 25, fields, {field: 'checkIn', operator: '$lt', value: 0, context: 'now'}));
+    const reservations = await guesty.getReservations(0, 25, fields, filters);
     console.log(reservations);
 }

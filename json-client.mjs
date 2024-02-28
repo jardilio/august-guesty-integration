@@ -61,7 +61,7 @@ export default class JSONClient {
             params.body = JSON.stringify(params.body);
         }
 
-        // console.debug("[REQUEST]", url, params);
+        console.debug("[REQUEST]", url, params);
         const response = await fetch(url, params);
 
         if (response.status >= 400) {
