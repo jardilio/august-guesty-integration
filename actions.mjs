@@ -128,21 +128,6 @@ export async function createCalendarEvents() {
         'checkOut'
     ];
 
-    const auth = await new Auth.GoogleAuth({
-            scopes: ['https://www.googleapis.com/auth/calendar.events'],
-            credentials: JSON.parse(config.GOOGLE_CREDENTIALS)
-        }).getClient();
-    const calendar = google.calendar({version: 'v3', auth});
-    const existingEvents = Object.fromEntries((await calendar.events.list({
-        calendarId: config.GOOGLE_CALENDAR_ID,
-        timeMin: new Date().toISOString(),
-        maxResults: 50,
-        singleEvents: true,
-        orderBy: 'startTime',
-    })).data.items.map(e => [e.extendedProperties.private.confirmationCode, e]));
-    
-    console.log(`Found ${Object.keys(existingEvents).length} existing calendar entries`);
-
     await guesty.authenticate();
     const resEvents = (await guesty.getReservations(0, 25, fields))
         .results
@@ -150,6 +135,21 @@ export async function createCalendarEvents() {
         .map(r => getCalendarEventFromReservation(r));
 
     console.log(`Found ${resEvents.length} reservations`);
+
+    const auth = await new Auth.GoogleAuth({
+            scopes: ['https://www.googleapis.com/auth/calendar.events'],
+            credentials: JSON.parse(config.GOOGLE_CREDENTIALS)
+        }).getClient();
+    const calendar = google.calendar({version: 'v3', auth});
+    const existingEvents = Object.fromEntries((await calendar.events.list({
+        calendarId: config.GOOGLE_CALENDAR_ID,
+        timeMin: (resEvents[0] && resEvents[0].start) || new Date().toISOString(),
+        maxResults: 50,
+        singleEvents: true,
+        orderBy: 'startTime',
+    })).data.items.map(e => [e.extendedProperties.private.confirmationCode, e]));
+    
+    console.log(`Found ${Object.keys(existingEvents).length} existing calendar entries`);
 
     const newEvents = resEvents
         .filter(r => !existingEvents[r.extendedProperties.private.confirmationCode])
