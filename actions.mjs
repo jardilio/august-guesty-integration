@@ -152,7 +152,7 @@ export async function createCalendarEvents() {
     console.log(`Found ${resEvents.length} reservations`);
 
     const newEvents = resEvents
-        .filter(r => !existingEvents[r.confirmationCode])
+        .filter(r => !existingEvents[r.extendedProperties.private.confirmationCode])
         .map(r => calendar.events.insert({
             calendarId: config.GOOGLE_CALENDAR_ID,
             requestBody: r
@@ -169,7 +169,7 @@ export async function createCalendarEvents() {
         })
         .map(r => calendar.events.update({
             calendarId: config.GOOGLE_CALENDAR_ID,
-            eventId: existingEvents[r.confirmationCode].id,
+            eventId: existingEvents[r.extendedProperties.private.confirmationCode].id,
             requestBody: r
         }));
 
