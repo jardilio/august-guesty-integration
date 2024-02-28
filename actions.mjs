@@ -152,7 +152,10 @@ export async function createCalendarEvents() {
     console.log(`Found ${Object.keys(existingEvents).length} existing calendar entries`);
 
     const newEvents = resEvents
-        .filter(r => !existingEvents[r.extendedProperties.private.confirmationCode])
+        .filter(r => {
+            const existing = existingEvents[r.extendedProperties.private.confirmationCode];
+            return !existing && r.status !== 'cancelled';
+        })
         /*.map(r => calendar.events.insert({
             calendarId: config.GOOGLE_CALENDAR_ID,
             requestBody: r
