@@ -155,7 +155,7 @@ export async function createCalendarEvents() {
         .filter(r => !existingEvents[r.confirmationCode])
         .map(r => calendar.events.insert({
             calendarId: config.GOOGLE_CALENDAR_ID,
-            requestBody: getCalendarEventFromReservation(r)
+            requestBody: r
         }));
 
     console.log(`Creating ${newEvents.length} new calendar entries`);
@@ -163,11 +163,14 @@ export async function createCalendarEvents() {
     await Promise.all(newEvents);
 
     const updatedEvents = resEvents
-        .filter(r => JSON.stringify(r) !== JSON.stringify(existingEvents[r.confirmationCode]))
+        .filter(r => {
+            const existing = existingEvents[r.extendedProperties.private.confirmationCode];
+            return existing && existing.extendedProperties.hash !== r.extendedProperties.private.hash;
+        })
         .map(r => calendar.events.update({
             calendarId: config.GOOGLE_CALENDAR_ID,
             eventId: existingEvents[r.confirmationCode].id,
-            requestBody: getCalendarEventFromReservation(r)
+            requestBody: r
         }));
 
     console.log(`Updating ${updatedEvents.length} existing calendar entries`);
@@ -180,12 +183,11 @@ export async function createCalendarEvents() {
 }
 
 function getCalendarEventFromReservation(r) {
-    r.money.netIncome = r.money.netIncome || r.money.commission / .2;
-    r.money.ownerRevenue = r.money.ownerRevenue || r.money.netIncome - r.money.commission;
-    
-    const description = `${r.guest.fullName} is ${r.isReturningGuest ? 'returning' : 'new'} guest with ${r.guestsCount} total guests staying at ${r.listing.nickname} for ${r.nightsCount} nights. Reservation ${r.confirmationCode} is ${r.status} on ${r.source} for a total cost of ${UsDollars.format(r.money.hostPayout)} with a net income of ${UsDollars.format(r.money.netIncome)} and estimated owner revenue of ${UsDollars.format(r.money.ownerRevenue)}. The average nightly revenue is ${UsDollars.format(r.money.ownerRevenue / r.nightsCount)} per night.`;
     const lastUpdated = r.log && r.log[0] ? r.log[0].at : r.createdAt;
     let status;
+
+    r.money.netIncome = r.money.netIncome || r.money.commission / .2;
+    r.money.ownerRevenue = r.money.ownerRevenue || r.money.netIncome - r.money.commission;
 
     switch(r.status) {
         case 'inquiry':
@@ -203,7 +205,7 @@ function getCalendarEventFromReservation(r) {
             break;
     }
 
-    return {
+    const event = {
         extendedProperties: {
             private: {
                 confirmationCode: r.confirmationCode,
@@ -214,9 +216,13 @@ function getCalendarEventFromReservation(r) {
         end: {dateTime: r.checkOut},
         location: r.listing.address.full,
         summary: r.guest.fullName,
-        description: description,
+        description: `${r.guest.fullName} is ${r.isReturningGuest ? 'returning' : 'new'} guest with ${r.guestsCount} total guests staying at ${r.listing.nickname} for ${r.nightsCount} nights. Reservation ${r.confirmationCode} is ${r.status} on ${r.source} for a total cost of ${UsDollars.format(r.money.hostPayout)} with a net income of ${UsDollars.format(r.money.netIncome)} and estimated owner revenue of ${UsDollars.format(r.money.ownerRevenue)}. The average nightly revenue is ${UsDollars.format(r.money.ownerRevenue / r.nightsCount)} per night.`,
         status: status
     };
+
+    event.extendedProperties.private.hash = crypto.createHash('md5').update(JSON.stringify(event)).digest('hex');
+
+    return event;
 }
 
 export async function exportReservationReports() {
