@@ -156,37 +156,31 @@ export async function createCalendarEvents() {
             const existing = existingEvents[r.extendedProperties.private.confirmationCode];
             return !existing && r.status !== 'cancelled';
         })
-        /*.map(r => calendar.events.insert({
+        .map(r => calendar.events.insert({
             calendarId: config.GOOGLE_CALENDAR_ID,
             requestBody: r
-        }))*/;
+        }));
 
     console.log(`Creating ${newEvents.length} new calendar entries`);
-    console.log(JSON.stringify(newEvents, null, 2));
 
-    //await Promise.all(newEvents);
+    await Promise.all(newEvents);
 
     const updatedEvents = resEvents
         .filter(r => {
             const existing = existingEvents[r.extendedProperties.private.confirmationCode];
             return existing && existing.extendedProperties.private.hash !== r.extendedProperties.private.hash;
         })
-        .map(r => {
-            r.id = existingEvents[r.extendedProperties.private.confirmationCode].id;
-            return r;
-        })
-        /*.map(r => calendar.events.update({
+        .map(r => calendar.events.update({
             calendarId: config.GOOGLE_CALENDAR_ID,
             eventId: existingEvents[r.extendedProperties.private.confirmationCode].id,
             requestBody: r
-        }))*/;
+        }));
 
     console.log(`Updating ${updatedEvents.length} existing calendar entries`);
-    console.log(JSON.stringify(updatedEvents, null, 2));
+
+    await Promise.all(updatedEvents);
 
     //TODO: Delete canceled events
-
-    //await Promise.all(updatedEvents);
 
     console.log('Done!');
 }
