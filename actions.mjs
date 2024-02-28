@@ -191,7 +191,11 @@ function getCalendarEventFromReservation(r) {
         case 'inquiry':
             status = 'tentative';
             break;
-        case '':
+        case 'canceled':
+        case 'cancelled':
+        case 'declined':
+        case 'expired':
+        case 'closed':
             status = 'cancelled';
             break;
         default:
