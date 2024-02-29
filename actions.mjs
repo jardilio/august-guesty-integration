@@ -128,6 +128,14 @@ export async function createCalendarEvents() {
         'checkOut'
     ];
 
+    await guesty.authenticate();
+    const resEvents = (await guesty.getReservations(0, 25, fields))
+        .results
+        .filter(r => !!r.guest)
+        .map(r => getCalendarEventFromReservation(r));
+
+    console.log(`Found ${resEvents.length} reservations`);
+
     const auth = await new Auth.GoogleAuth({
             scopes: ['https://www.googleapis.com/auth/calendar.events'],
             credentials: JSON.parse(config.GOOGLE_CREDENTIALS)
@@ -135,7 +143,7 @@ export async function createCalendarEvents() {
     const calendar = google.calendar({version: 'v3', auth});
     const existingEvents = Object.fromEntries((await calendar.events.list({
         calendarId: config.GOOGLE_CALENDAR_ID,
-        timeMin: new Date().toISOString(),
+        timeMin: (resEvents[0] && resEvents[0].start) || new Date().toISOString(),
         maxResults: 50,
         singleEvents: true,
         orderBy: 'startTime',
@@ -143,66 +151,112 @@ export async function createCalendarEvents() {
     
     console.log(`Found ${Object.keys(existingEvents).length} existing calendar entries`);
 
-    await guesty.authenticate();
-    const reservations = (await guesty.getReservations(0, 25, fields))
-        .results
-        .filter(r => !!r.guest)
-        .map(r => {
-            r.money.netIncome = r.money.netIncome || r.money.commission / .2;
-            r.money.ownerRevenue = r.money.ownerRevenue || r.money.netIncome - r.money.commission;
-            r.description = `${r.guest.fullName} is ${r.isReturningGuest ? 'returning' : 'new'} guest with ${r.guestsCount} total guests staying at ${r.listing.nickname} for ${r.nightsCount} nights. Reservation ${r.confirmationCode} is ${r.status} on ${r.source} for a total cost of ${UsDollars.format(r.money.hostPayout)} with a net income of ${UsDollars.format(r.money.netIncome)} and estimated owner revenue of ${UsDollars.format(r.money.ownerRevenue)}. The average nightly revenue is ${UsDollars.format(r.money.ownerRevenue / r.nightsCount)} per night.`;
-            r.lastUpdated = r.log && r.log[0] ? r.log[0].at : r.createdAt;
-            return r;
-        });
-
-    console.log(`Found ${reservations.length} reservations`);
-
-    const newEvents = reservations
-        .filter(r => !existingEvents[r.confirmationCode])
+    const newEvents = resEvents
+        .filter(r => {
+            const existing = existingEvents[r.extendedProperties.private.confirmationCode];
+            return !existing && r.status !== 'cancelled';
+        })
         .map(r => calendar.events.insert({
             calendarId: config.GOOGLE_CALENDAR_ID,
-            requestBody: {
-                extendedProperties: {
-                    private: {
-                        confirmationCode: r.confirmationCode,
-                        lastUpdated: r.lastUpdated
-                    }
-                },
-                start: {dateTime: r.checkIn},
-                end: {dateTime: r.checkOut},
-                location: r.listing.address.full,
-                summary: r.guest.fullName,
-                description: r.description
-            }
+            requestBody: r
         }));
 
     console.log(`Creating ${newEvents.length} new calendar entries`);
 
-    const updatedEvents = reservations
-        .filter(r => existingEvents[r.confirmationCode] && (r.lastUpdated != existingEvents[r.confirmationCode].extendedProperties.private.lastUpdated || r.description != existingEvents[r.confirmationCode].description))
+    await Promise.all(newEvents);
+
+    const updatedEvents = resEvents
+        .filter(r => {
+            const existing = existingEvents[r.extendedProperties.private.confirmationCode];
+            return existing && existing.extendedProperties.private.hash !== r.extendedProperties.private.hash;
+        })
         .map(r => calendar.events.update({
             calendarId: config.GOOGLE_CALENDAR_ID,
-            eventId: existingEvents[r.confirmationCode].id,
-            requestBody: {
-                extendedProperties: {
-                    private: {
-                        confirmationCode: r.confirmationCode,
-                        lastUpdated: r.lastUpdated
-                    }
-                },
-                start: {dateTime: r.checkIn},
-                end: {dateTime: r.checkOut},
-                location: r.listing.address.full,
-                summary: r.guest.fullName,
-                description: r.description
-            }
+            eventId: existingEvents[r.extendedProperties.private.confirmationCode].id,
+            requestBody: r
         }));
 
     console.log(`Updating ${updatedEvents.length} existing calendar entries`);
 
-    //TODO: Update existing and delete canceled events
+    await Promise.all(updatedEvents);
 
-    await Promise.all(newEvents);
+    //TODO: Delete canceled events
 
     console.log('Done!');
+}
+
+function getCalendarEventFromReservation(r) {
+    const lastUpdated = r.log && r.log[0] ? r.log[0].at : r.createdAt;
+    let status;
+
+    r.money.netIncome = r.money.netIncome || r.money.commission / .2;
+    r.money.ownerRevenue = r.money.ownerRevenue || r.money.netIncome - r.money.commission;
+
+    switch(r.status) {
+        case 'inquiry':
+            status = 'tentative';
+            break;
+        case 'canceled':
+        case 'cancelled':
+        case 'declined':
+        case 'expired':
+        case 'closed':
+            status = 'cancelled';
+            break;
+        default:
+            status = 'confirmed';
+            break;
+    }
+
+    const event = {
+        extendedProperties: {
+            private: {
+                confirmationCode: r.confirmationCode,
+                lastUpdated: lastUpdated
+            }
+        },
+        start: {dateTime: r.checkIn},
+        end: {dateTime: r.checkOut},
+        location: r.listing.address.full,
+        summary: r.guest.fullName,
+        description: `${r.guest.fullName} is ${r.isReturningGuest ? 'returning' : 'new'} guest with ${r.guestsCount} total guests staying at ${r.listing.nickname} for ${r.nightsCount} nights. Reservation ${r.confirmationCode} is ${r.status} on ${r.source} for a total cost of ${UsDollars.format(r.money.hostPayout)} with a net income of ${UsDollars.format(r.money.netIncome)} and estimated owner revenue of ${UsDollars.format(r.money.ownerRevenue)}. The average nightly revenue is ${UsDollars.format(r.money.ownerRevenue / r.nightsCount)} per night.`,
+        status: status
+    };
+
+    event.extendedProperties.private.hash = crypto.createHash('md5').update(JSON.stringify(event)).digest('hex');
+
+    return event;
+}
+
+export async function exportReservationReports() {
+    const fields = [
+        'source',
+        'confirmationCode',
+        'listing.address.full',
+        'listing.nickname',
+        'guest.fullName', 
+        'money.hostPayout',
+        'money.netIncome',
+        'money.ownerRevenue',
+        'money.commission',
+        'isReturningGuest',
+        'nightsCount',
+        'guestsCount',
+        'status',
+        'checkIn',
+        'checkOut'
+    ];
+
+    const filters = [
+        {
+            field: 'checkIn',
+            operator: '$lt',
+            value: 0,
+            context: 'now'
+        }
+    ];
+
+    await guesty.authenticate();
+    const reservations = await guesty.getReservations(0, 25, fields, filters);
+    // console.log(reservations);
 }
