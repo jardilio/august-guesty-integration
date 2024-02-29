@@ -290,7 +290,8 @@ export async function exportReservationReports() {
     await sheets.spreadsheets.values.append(
         {
             spreadsheetId: config.GOOGLE_SHEET_ID,
-            range: 'Data!A:M'
+            range: 'Data!A:M',
+            valueInputOption: 'RAW'
         },
         {
             majorDimension: 'ROWS',
