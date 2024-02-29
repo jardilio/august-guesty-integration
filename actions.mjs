@@ -289,10 +289,13 @@ export async function exportReservationReports() {
     
     await sheets.spreadsheets.values.append(
         {
+            spreadsheetId: config.GOOGLE_SHEET_ID,
+            range: 'Data!A:M'
+        },
+        {
             majorDimension: 'ROWS',
             values: reservations
-        },
-        config.GOOGLE_SHEET_ID,
-        'Data!A:M'
+        }
+        
     );
 }
