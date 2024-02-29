@@ -189,8 +189,7 @@ function getCalendarEventFromReservation(r) {
     const lastUpdated = r.log && r.log[0] ? r.log[0].at : r.createdAt;
     let status;
 
-    r.money.netIncome = r.money.netIncome || r.money.commission / .2;
-    r.money.ownerRevenue = r.money.ownerRevenue || r.money.netIncome - r.money.commission;
+    fixReservationMoney(r);
 
     switch(r.status) {
         case 'inquiry':
@@ -228,12 +227,16 @@ function getCalendarEventFromReservation(r) {
     return event;
 }
 
+function fixReservationMoney(r) {
+    r.money.netIncome = r.money.netIncome || r.money.commission / .2;
+    r.money.ownerRevenue = r.money.ownerRevenue || r.money.netIncome - r.money.commission;
+    return r;
+}
+
 export async function exportReservationReports() {
     const fields = [
         'source',
         'confirmationCode',
-        'listing.address.full',
-        'listing.nickname',
         'guest.fullName', 
         'money.hostPayout',
         'money.netIncome',
@@ -256,7 +259,37 @@ export async function exportReservationReports() {
         }
     ];
 
+    const auth = await new Auth.GoogleAuth({
+        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+        credentials: JSON.parse(config.GOOGLE_CREDENTIALS)
+    }).getClient();
+    const sheets = google.sheets({version: 'v4', auth});
+
     await guesty.authenticate();
-    const reservations = await guesty.getReservations(0, 25, fields, filters);
-    // console.log(reservations);
+    const reservations = (await guesty.getReservations(0, 25, fields, filters))
+        .map(r => {
+            fixReservationMoney(r);
+            return [
+                r.source,
+                r.confirmationCode,
+                r.guest.fullName,
+                r.money.hostPayout,
+                r.money.netIncome,
+                r.money.ownerRevenue,
+                r.money.commission,
+                r.isReturningGuest,
+                r.nightsCount,
+                r.guestsCount,
+                r.status,
+                r.checkIn,
+                r.checkOut
+            ];
+        });
+    
+    await sheets.spreadsheets.append({
+        spreadsheetId: config.GOOGLE_SHEET_ID,
+        updates: {
+            values: reservations
+        }
+    });
 }
