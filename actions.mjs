@@ -267,6 +267,7 @@ export async function exportReservationReports() {
 
     await guesty.authenticate();
     const reservations = (await guesty.getReservations(0, 25, fields, filters))
+        .results
         .map(r => {
             fixReservationMoney(r);
             return [
