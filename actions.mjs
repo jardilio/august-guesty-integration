@@ -287,7 +287,7 @@ export async function exportReservationReports() {
             ];
         });
     
-    await sheets.spreadsheets.append({
+    await sheets.spreadsheets.values.append({
         spreadsheetId: config.GOOGLE_SHEET_ID,
         updates: {
             values: reservations
