@@ -235,8 +235,8 @@ function fixReservationMoney(r) {
 
 export async function exportReservationReports() {
     const fields = [
-        'source',
         'confirmationCode',
+        'source',
         'guest.fullName', 
         'money.hostPayout',
         'money.netIncome',
@@ -271,8 +271,8 @@ export async function exportReservationReports() {
         .map(r => {
             fixReservationMoney(r);
             return [
-                r.source,
                 r.confirmationCode,
+                r.source,
                 r.guest.fullName,
                 r.money.hostPayout,
                 r.money.netIncome,
@@ -282,8 +282,8 @@ export async function exportReservationReports() {
                 r.nightsCount,
                 r.guestsCount,
                 r.status,
-                r.checkIn.substring(10),
-                r.checkOut.substring(10)
+                r.checkIn.substring(0, 10),
+                r.checkOut.substring(0, 10)
             ];
         });
     
