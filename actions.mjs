@@ -291,12 +291,11 @@ export async function exportReservationReports() {
         {
             spreadsheetId: config.GOOGLE_SHEET_ID,
             range: 'Data!A:M',
-            valueInputOption: 'RAW'
-        },
-        {
-            majorDimension: 'ROWS',
-            values: reservations
+            valueInputOption: 'RAW',
+            resource: {
+                majorDimension: 'ROWS',
+                values: reservations
+            }
         }
-        
     );
 }
