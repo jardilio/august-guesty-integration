@@ -293,7 +293,7 @@ export async function exportReservationReports() {
         rows.push.apply(rows, results);
 
         if (rows.length < reservations.count) {
-            await getNextPage(rows.length);
+            await getRows(rows.length);
         }
     }
 
