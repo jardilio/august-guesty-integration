@@ -304,8 +304,9 @@ export async function exportReservationReports() {
     await sheets.spreadsheets.values.append(
         {
             spreadsheetId: config.GOOGLE_SHEET_ID,
-            range: `Data!A1:M${rows.length}`,
+            range: 'Data!A:M',
             valueInputOption: 'USER_ENTERED',
+            insertDataOption: 'OVERWRITE',
             resource: {
                 majorDimension: 'ROWS',
                 values: rows
