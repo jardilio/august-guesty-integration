@@ -294,7 +294,7 @@ export async function exportReservationReports() {
                 ];
             });
         rows.push.apply(rows, reservations.results);
-        console.log(Object.keys(reservation));
+        console.log(Object.keys(reservations));
     }
 
     await getNextPage(0);
