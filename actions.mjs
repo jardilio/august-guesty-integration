@@ -268,9 +268,9 @@ export async function exportReservationReports() {
 
     await guesty.authenticate();
 
-    async function getNextPage(skip) {
+    async function getRows(skip) {
         const reservations = await guesty.getReservations(skip, 25, fields, filters);
-        reservations
+        const results = reservations
             .results
             .map(r => {
                 fixReservationMoney(r);
@@ -290,14 +290,14 @@ export async function exportReservationReports() {
                     r.checkOut.substring(0, 10)
                 ];
             });
-        rows.push.apply(rows, reservations.results);
+        rows.push.apply(rows, results);
 
         if (rows.length < reservations.count) {
             await getNextPage(rows.length);
         }
     }
 
-    await getNextPage(0);
+    await getRows(0);
 
     // add header row
     rows.push.apply(rows, fields);
