@@ -264,28 +264,40 @@ export async function exportReservationReports() {
         credentials: JSON.parse(config.GOOGLE_CREDENTIALS)
     }).getClient();
     const sheets = google.sheets({version: 'v4', auth});
+    const rows = [];
+
+    // add header row
+    rows.push.apply(rows, fields);
 
     await guesty.authenticate();
-    const reservations = (await guesty.getReservations(0, 25, fields, filters))
-        .results
-        .map(r => {
-            fixReservationMoney(r);
-            return [
-                r.confirmationCode,
-                r.source,
-                r.guest.fullName,
-                r.money.hostPayout,
-                r.money.netIncome,
-                r.money.ownerRevenue,
-                r.money.commission,
-                r.isReturningGuest,
-                r.nightsCount,
-                r.guestsCount,
-                r.status,
-                r.checkIn.substring(0, 10),
-                r.checkOut.substring(0, 10)
-            ];
-        });
+
+    async function getNextPage(page) {
+        const reservations = await guesty.getReservations(page, 25, fields, filters);
+        reservations
+            .results
+            .map(r => {
+                fixReservationMoney(r);
+                return [
+                    r.confirmationCode,
+                    r.source,
+                    r.guest.fullName,
+                    r.money.hostPayout,
+                    r.money.netIncome,
+                    r.money.ownerRevenue,
+                    r.money.commission,
+                    r.isReturningGuest,
+                    r.nightsCount,
+                    r.guestsCount,
+                    r.status,
+                    r.checkIn.substring(0, 10),
+                    r.checkOut.substring(0, 10)
+                ];
+            });
+        rows.push.apply(rows, reservations.results);
+        console.log(Object.keys(reservation));
+    }
+
+    await getNextPage(0);
     
     await sheets.spreadsheets.values.append(
         {
