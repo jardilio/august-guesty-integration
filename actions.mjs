@@ -253,9 +253,8 @@ export async function exportReservationReports() {
     const filters = [
         {
             field: 'checkIn',
-            operator: '$lt',
-            value: 0,
-            context: 'now'
+            operator: '$gt',
+            value: 0
         }
     ];
 
@@ -305,7 +304,7 @@ export async function exportReservationReports() {
     await sheets.spreadsheets.values.append(
         {
             spreadsheetId: config.GOOGLE_SHEET_ID,
-            range: 'Data!A:M',
+            range: `Data!A1:M${rows.length}`,
             valueInputOption: 'USER_ENTERED',
             resource: {
                 majorDimension: 'ROWS',
