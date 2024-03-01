@@ -282,8 +282,8 @@ export async function exportReservationReports() {
                 r.nightsCount,
                 r.guestsCount,
                 r.status,
-                r.checkIn,
-                r.checkOut
+                new Date(r.checkIn),
+                new Date(r.checkOut)
             ];
         });
     
