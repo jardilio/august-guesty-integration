@@ -266,13 +266,10 @@ export async function exportReservationReports() {
     const sheets = google.sheets({version: 'v4', auth});
     const rows = [];
 
-    // add header row
-    rows.push.apply(rows, fields);
-
     await guesty.authenticate();
 
-    async function getNextPage(page) {
-        const reservations = await guesty.getReservations(page, 25, fields, filters);
+    async function getNextPage(skip) {
+        const reservations = await guesty.getReservations(skip, 25, fields, filters);
         reservations
             .results
             .map(r => {
@@ -294,10 +291,16 @@ export async function exportReservationReports() {
                 ];
             });
         rows.push.apply(rows, reservations.results);
-        console.log(Object.keys(reservations));
+
+        if (rows.length < reservations.count) {
+            await getNextPage(rows.length);
+        }
     }
 
     await getNextPage(0);
+
+    // add header row
+    rows.push.apply(rows, fields);
     
     await sheets.spreadsheets.values.append(
         {
@@ -306,7 +309,7 @@ export async function exportReservationReports() {
             valueInputOption: 'USER_ENTERED',
             resource: {
                 majorDimension: 'ROWS',
-                values: reservations
+                values: rows
             }
         }
     );
