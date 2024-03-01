@@ -300,7 +300,7 @@ export async function exportReservationReports() {
     await getRows(0);
 
     // add header row
-    rows.push.apply(rows, fields);
+    rows.unshift(fields);
     
     await sheets.spreadsheets.values.append(
         {
