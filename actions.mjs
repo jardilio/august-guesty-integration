@@ -282,8 +282,8 @@ export async function exportReservationReports() {
                 r.nightsCount,
                 r.guestsCount,
                 r.status,
-                new Date(r.checkIn).toString(),
-                new Date(r.checkOut).toString()
+                r.checkIn.substring(10),
+                r.checkOut.substring(10)
             ];
         });
     
@@ -291,7 +291,7 @@ export async function exportReservationReports() {
         {
             spreadsheetId: config.GOOGLE_SHEET_ID,
             range: 'Data!A:M',
-            valueInputOption: 'RAW',
+            valueInputOption: 'USER_ENTERED',
             resource: {
                 majorDimension: 'ROWS',
                 values: reservations
