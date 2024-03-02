@@ -333,6 +333,7 @@ export async function exportReservationReports() {
             valueInputOption: 'USER_ENTERED',
             insertDataOption: 'OVERWRITE',
             resource: {
+                range: 'Data!A1',
                 majorDimension: 'ROWS',
                 values: rows
             }
