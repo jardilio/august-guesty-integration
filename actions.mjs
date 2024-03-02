@@ -314,7 +314,7 @@ export async function exportReservationReports() {
     await getRows(0);
 
     // add header row
-    rows.unshift(fields.concat[
+    rows.unshift(fields.concat(
         'money.nightlyOwnerRevenue',
         'checkIn.year',
         'checkIn.month',
@@ -324,7 +324,7 @@ export async function exportReservationReports() {
         'checkOut.month',
         'checkOut.month.nights',
         'checkOut.month.ownerRevenue'
-    ]);
+    ));
     
     await sheets.spreadsheets.values.append(
         {
