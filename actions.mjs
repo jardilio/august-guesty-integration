@@ -327,7 +327,7 @@ export async function exportReservationReports() {
     ));
     
     await sheets.spreadsheets.values.clear({
-        spreadsheetid: config.GOOGLE_SHEET_ID,
+        spreadsheetId: config.GOOGLE_SHEET_ID,
         range: 'Data!A:ZZ'
     });
 
