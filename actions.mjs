@@ -273,6 +273,12 @@ export async function exportReservationReports() {
             .results
             .map(r => {
                 fixReservationMoney(r);
+                const checkInYear = r.checkIn.substring(0,4);
+                const checkInMonth = r.checkIn.substring(5, 7);
+                const checkInDay = Number(r.checkIn.substring(8, 10));
+                const checkInMonthDays = new Date(checkInYear, checkInMonth, 0).getDate();
+                const checkInMonthNights = Math.min(r.nightsCount, checkInMonthDays-checkInDay+1);
+                const nightlyOwnerRevenue = r.money.ownerRevenue / r.nightsCount
                 return [
                     r.confirmationCode,
                     r.source,
@@ -285,8 +291,17 @@ export async function exportReservationReports() {
                     r.nightsCount,
                     r.guestsCount,
                     r.status,
+                    nightlyOwnerRevenue,
                     r.checkIn.substring(0, 10),
-                    r.checkOut.substring(0, 10)
+                    r.checkOut.substring(0, 10),
+                    checkInYear,
+                    checkInMonth,
+                    checkInMonthNights,
+                    nightlyOwnerRevenue * checkInMonthNights,
+                    r.checkOut.substring(0,4),
+                    r.checkOut.substring(5, 7),
+                    r.nightsCount - checkInMonthNights,
+                    nightlyOwnerRevenue * (r.nightsCount - checkInMonthNights)
                 ];
             });
         rows.push.apply(rows, results);
@@ -299,7 +314,17 @@ export async function exportReservationReports() {
     await getRows(0);
 
     // add header row
-    rows.unshift(fields);
+    rows.unshift(fields.concat[
+        'money.nightlyOwnerRevenue',
+        'checkIn.year',
+        'checkIn.month',
+        'checkIn.month.nights',
+        'checkIn.month.ownerRevenue',
+        'checkOut.year',
+        'checkOut.month',
+        'checkOut.month.nights',
+        'checkOut.month.ownerRevenue'
+    ]);
     
     await sheets.spreadsheets.values.append(
         {
