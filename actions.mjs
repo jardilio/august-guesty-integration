@@ -326,17 +326,19 @@ export async function exportReservationReports() {
         'checkOut.month.ownerRevenue'
     ));
     
-    await sheets.spreadsheets.values.append(
-        {
-            spreadsheetId: config.GOOGLE_SHEET_ID,
-            range: 'Data!A1',
-            valueInputOption: 'USER_ENTERED',
-            insertDataOption: 'OVERWRITE',
-            resource: {
-                range: 'Data!A1',
-                majorDimension: 'ROWS',
-                values: rows
-            }
+    await sheets.spreadsheets.values.clear({
+        spreadsheetid: config.GOOGLE_SHEET_ID,
+        range: 'Data!A:ZZ'
+    });
+
+    await sheets.spreadsheets.values.append({
+        spreadsheetId: config.GOOGLE_SHEET_ID,
+        range: 'Data!A1',
+        valueInputOption: 'USER_ENTERED',
+        insertDataOption: 'OVERWRITE',
+        resource: {
+            majorDimension: 'ROWS',
+            values: rows
         }
-    );
+    });
 }
