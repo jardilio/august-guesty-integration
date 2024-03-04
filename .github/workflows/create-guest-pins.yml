@@ -3,9 +3,8 @@ name: Create Guest Access Codes
 
 on:
   workflow_dispatch:
-  schedule: 
-    # 4x daily, every 6 hours
-    - cron: '0 */6 * * *'
+  # schedule: 
+    # - cron: '0 */6 * * *'
 
 env:
   GUESTY_USERNAME: ${{ secrets.GUESTY_USERNAME }}
