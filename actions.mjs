@@ -132,7 +132,7 @@ export async function createCalendarEvents() {
     await guesty.authenticate();
     const resEvents = (await guesty.getReservations(0, 25, fields))
         .results
-        .filter(r => !!r.guest)
+        .filter(r => !!r.guest && !!r.confirmationCode)
         .map(r => getCalendarEventFromReservation(r));
 
     console.log(`Found ${resEvents.length} reservations`);
@@ -142,19 +142,39 @@ export async function createCalendarEvents() {
             credentials: JSON.parse(config.GOOGLE_CREDENTIALS)
         }).getClient();
     const calendar = google.calendar({version: 'v3', auth});
+
+    /*const existingEvents2 = (await calendar.events.list({
+        calendarId: config.GOOGLE_CALENDAR_ID,
+        timeMin: (resEvents[0] && resEvents[0].start) || new Date().toISOString(),
+        maxResults: 50,
+        singleEvents: true,
+        orderBy: 'startTime',
+    })).data.items;
+
+    existingEvents2.forEach(e => calendar.events.delete({
+        calendarId: config.GOOGLE_CALENDAR_ID,
+        eventId: e.id
+    }));
+
+    console.log(`Deleting ${existingEvents2.length} calendar entries`);
+
+    await Promise.all(existingEvents2);
+
+    return;*/
+
     const existingEvents = Object.fromEntries((await calendar.events.list({
         calendarId: config.GOOGLE_CALENDAR_ID,
         timeMin: (resEvents[0] && resEvents[0].start) || new Date().toISOString(),
         maxResults: 50,
         singleEvents: true,
         orderBy: 'startTime',
-    })).data.items.map(e => [e.extendedProperties.private.confirmationCode, e]));
+    })).data.items.map(e => [e.extendedProperties.private.reservationId, e]));
     
     console.log(`Found ${Object.keys(existingEvents).length} existing calendar entries`);
 
     const newEvents = resEvents
         .filter(r => {
-            const existing = existingEvents[r.extendedProperties.private.confirmationCode];
+            const existing = existingEvents[r.extendedProperties.private.reservationId];
             return !existing && r.status !== 'cancelled';
         })
         .map(r => calendar.events.insert({
@@ -168,12 +188,12 @@ export async function createCalendarEvents() {
 
     const updatedEvents = resEvents
         .filter(r => {
-            const existing = existingEvents[r.extendedProperties.private.confirmationCode];
+            const existing = existingEvents[r.extendedProperties.private.reservationId];
             return existing && existing.extendedProperties.private.hash !== r.extendedProperties.private.hash;
         })
         .map(r => calendar.events.update({
             calendarId: config.GOOGLE_CALENDAR_ID,
-            eventId: existingEvents[r.extendedProperties.private.confirmationCode].id,
+            eventId: existingEvents[r.extendedProperties.private.reservationId].id,
             requestBody: r
         }));
 
@@ -182,6 +202,19 @@ export async function createCalendarEvents() {
     await Promise.all(updatedEvents);
 
     //TODO: Delete canceled events
+
+    const deletedEvents = resEvents
+        .filter(r => {
+            const existing = existingEvents[r.extendedProperties.private.reservationId];
+            return existing && (r.status == 'cancelled' || !r.confirmationCode);
+        })
+        .map(r => calendar.events.delete({
+            calendarId: config.GOOGLE_CALENDAR_ID,
+            eventId: existingEvents[r.extendedProperties.private.reservationId].id,
+            requestBody: r
+        }));
+
+    console.log(`Deleting ${deletedEvents.length} existing calendar entries`);
 
     console.log('Done!');
 }
@@ -213,7 +246,8 @@ function getCalendarEventFromReservation(r) {
         extendedProperties: {
             private: {
                 confirmationCode: r.confirmationCode,
-                lastUpdated: lastUpdated
+                lastUpdated: lastUpdated,
+                reservationId: r._id
             }
         },
         start: {dateTime: r.checkIn},
