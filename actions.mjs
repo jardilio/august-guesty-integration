@@ -203,7 +203,7 @@ export async function createCalendarEvents() {
 
     //TODO: Delete canceled events
 
-    const deletedEvents = resEvents
+    /* const deletedEvents = resEvents
         .filter(r => {
             const existing = existingEvents[r.extendedProperties.private.reservationId];
             return existing && (r.status == 'cancelled' || !r.confirmationCode);
@@ -214,7 +214,7 @@ export async function createCalendarEvents() {
             requestBody: r
         }));
 
-    console.log(`Deleting ${deletedEvents.length} existing calendar entries`);
+    console.log(`Deleting ${deletedEvents.length} existing calendar entries`);*/
 
     console.log('Done!');
 }
