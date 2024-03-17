@@ -175,7 +175,7 @@ export async function createCalendarEvents() {
     const newEvents = resEvents
         .filter(r => {
             const existing = existingEvents[r.extendedProperties.private.reservationId];
-            return !existing && r.status !== 'cancelled';
+            return !existing && r.status == 'confirmed';
         })
         .map(r => calendar.events.insert({
             calendarId: config.GOOGLE_CALENDAR_ID,
@@ -189,7 +189,7 @@ export async function createCalendarEvents() {
     const updatedEvents = resEvents
         .filter(r => {
             const existing = existingEvents[r.extendedProperties.private.reservationId];
-            return existing && existing.extendedProperties.private.hash !== r.extendedProperties.private.hash;
+            return existing && r.status == 'confirmed' && existing.extendedProperties.private.hash !== r.extendedProperties.private.hash;
         })
         .map(r => calendar.events.update({
             calendarId: config.GOOGLE_CALENDAR_ID,
@@ -203,10 +203,10 @@ export async function createCalendarEvents() {
 
     //TODO: Delete canceled events
 
-    /* const deletedEvents = resEvents
+    const deletedEvents = resEvents
         .filter(r => {
             const existing = existingEvents[r.extendedProperties.private.reservationId];
-            return existing && (r.status == 'cancelled' || !r.confirmationCode);
+            return existing && r.status !== 'confirmed';
         })
         .map(r => calendar.events.delete({
             calendarId: config.GOOGLE_CALENDAR_ID,
@@ -214,7 +214,7 @@ export async function createCalendarEvents() {
             requestBody: r
         }));
 
-    console.log(`Deleting ${deletedEvents.length} existing calendar entries`);*/
+    console.log(`Deleting ${deletedEvents.length} existing calendar entries`);
 
     console.log('Done!');
 }
