@@ -263,8 +263,13 @@ function getCalendarEventFromReservation(r) {
 }
 
 function fixReservationMoney(r) {
-    r.money.netIncome = r.money.netIncome || r.money.commission / .2;
-    r.money.ownerRevenue = r.money.ownerRevenue || r.money.netIncome - r.money.commission;
+    // default commission = 20%
+    // default netIncome formula = host_payout - channel_commission - (fare_cleaning*.676)
+    r.money.netIncomeFormula = r.money.netIncome ? r.money.netIncomeFormula : 'Net income missing, recalculating based on assumed formula: host_payout - channel_commission - (fare_cleaning*.676)';
+    r.money.netIncome = r.money.netIncome || r.money.hostPayout - r.money.commission - (r.money.fareCleaning * 0.676); 
+    // default ownerRevenue formula = netIncome * 0.8 [1 - (commission / hostPayout)]
+    r.money.ownerRevenueFormula = r.money.ownerRevenue ? r.money.ownerRevenueFormula : 'Owner revenue missing, recalculating based on assumed formula: netIncome * 0.8 [1 - (commission / hostPayout)]';
+    r.money.ownerRevenue = r.money.ownerRevenue || r.money.netIncome * (1-(r.money.commission / r.money.hostPayout));
     return r;
 }
 
@@ -282,6 +287,7 @@ export async function exportReservationReports() {
         'money.commissionFormula',
         'money.totalPaid',
         'money.totalTaxes',
+        'money.fareCleaning',
         'money.invoiceItems',
         'isReturningGuest',
         'nightsCount',
@@ -321,20 +327,22 @@ export async function exportReservationReports() {
                 const checkInMonthNights = Math.min(r.nightsCount, checkInMonthDays-checkInDay+1);
                 const nightlyOwnerRevenue = r.money.ownerRevenue / r.nightsCount
                 return [
+                    r._id,
                     r.confirmationCode,
                     r.source,
                     r.guest.fullName,
                     r.money.hostPayout,
-                    UsDollars.format(r.money.netIncome),
+                    UsDollars.format(r.money.netIncome || 0),
                     r.money.netIncomeFormula,
-                    UsDollars.format(r.money.ownerRevenue),
+                    UsDollars.format(r.money.ownerRevenue || 0),
                     r.money.ownerRevenueFormula,
-                    UsDollars.format(r.money.commission),
+                    UsDollars.format(r.money.commission || 0),
                     r.money.commissionFormula,
-                    UsDollars.format(r.money.totalPaid),
-                    UsDollars.format(r.money.totalTaxes),
+                    UsDollars.format(r.money.totalPaid || 0),
+                    UsDollars.format(r.money.totalTaxes || 0),
+                    UsDollars.format(r.money.fareCleaning || 0),
                     r.money.invoiceItems
-                        .map(i => `${i.title}: ${UsDollars.format(i.amount)}`)
+                        .map(i => `${i.title}: ${UsDollars.format(i.amount || 0)}`)
                         .join(', '),
                     r.isReturningGuest,
                     r.nightsCount,
@@ -363,7 +371,7 @@ export async function exportReservationReports() {
     await getRows(0);
 
     // add header row
-    rows.unshift(fields.concat(
+    rows.unshift(['reservationId'].concat(fields.concat(
         'money.nightlyOwnerRevenue',
         'checkIn.year',
         'checkIn.month',
@@ -373,7 +381,7 @@ export async function exportReservationReports() {
         'checkOut.month',
         'checkOut.month.nights',
         'checkOut.month.ownerRevenue'
-    ));
+    )));
     
     await sheets.spreadsheets.values.clear({
         spreadsheetId: config.GOOGLE_SHEET_ID,
