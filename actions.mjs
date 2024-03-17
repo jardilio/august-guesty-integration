@@ -121,6 +121,7 @@ export async function createCalendarEvents() {
         'money.netIncome',
         'money.ownerRevenue',
         'money.commission',
+        'money.fareCleaning',
         'isReturningGuest',
         'nightsCount',
         'guestsCount',
