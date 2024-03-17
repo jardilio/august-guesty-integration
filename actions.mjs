@@ -70,7 +70,7 @@ export async function createGuestPins() {
     await guesty.authenticate();
     const reservations = await guesty.getReservations(0, 5, ['checkIn', 'checkOut', 'guest.fullName', 'guest.phone']);
     const pincodes = reservations.results
-        .filter(r => !!r.guest && r.checkIn < limit)
+        .filter(r => r.status == 'confirmed' && !!r.guest && r.checkIn < limit)
         .map(r => {
             const names = r.guest.fullName.split(" ");
             return {
@@ -143,25 +143,6 @@ export async function createCalendarEvents() {
             credentials: JSON.parse(config.GOOGLE_CREDENTIALS)
         }).getClient();
     const calendar = google.calendar({version: 'v3', auth});
-
-    /*const existingEvents2 = (await calendar.events.list({
-        calendarId: config.GOOGLE_CALENDAR_ID,
-        timeMin: (resEvents[0] && resEvents[0].start) || new Date().toISOString(),
-        maxResults: 50,
-        singleEvents: true,
-        orderBy: 'startTime',
-    })).data.items;
-
-    existingEvents2.forEach(e => calendar.events.delete({
-        calendarId: config.GOOGLE_CALENDAR_ID,
-        eventId: e.id
-    }));
-
-    console.log(`Deleting ${existingEvents2.length} calendar entries`);
-
-    await Promise.all(existingEvents2);
-
-    return;*/
 
     const existingEvents = Object.fromEntries((await calendar.events.list({
         calendarId: config.GOOGLE_CALENDAR_ID,
