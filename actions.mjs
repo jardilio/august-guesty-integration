@@ -62,7 +62,8 @@ export async function createGuestPins() {
         'checkIn', 
         'checkOut', 
         'guest.fullName',
-        'guest.phone'
+        'guest.phone',
+        'status'
     ];
 
     console.log(`Finding reservations before ${limit}`);
