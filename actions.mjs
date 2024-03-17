@@ -69,7 +69,7 @@ export async function createGuestPins() {
     console.log(`Finding reservations before ${limit}`);
 
     await guesty.authenticate();
-    const reservations = await guesty.getReservations(0, 5, ['checkIn', 'checkOut', 'guest.fullName', 'guest.phone']);
+    const reservations = await guesty.getReservations(0, 5, fields);
     const pincodes = reservations.results
         .filter(r => r.status == 'confirmed' && !!r.guest && r.checkIn < limit)
         .map(r => {
