@@ -144,7 +144,7 @@ export async function createCalendarEvents() {
             credentials: JSON.parse(config.GOOGLE_CREDENTIALS)
         }).getClient();
     const calendar = google.calendar({version: 'v3', auth});
-
+  
     const existingEvents = Object.fromEntries((await calendar.events.list({
         calendarId: config.GOOGLE_CALENDAR_ID,
         timeMin: (resEvents[0] && resEvents[0].start) || new Date().toISOString(),
