@@ -14,6 +14,8 @@ env:
   GUESTY_LISTING: ${{ secrets.GUESTY_LISTING }}
   GUESTY_ACCOUNT: ${{ secrets.GUESTY_ACCOUNT }}
   GUESTY_API_KEY: ${{ secrets.GUESTY_API_KEY }}
+  GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+  GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
 
 jobs:
   run:

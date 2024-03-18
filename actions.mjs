@@ -62,15 +62,16 @@ export async function createGuestPins() {
         'checkIn', 
         'checkOut', 
         'guest.fullName',
-        'guest.phone'
+        'guest.phone',
+        'status'
     ];
 
     console.log(`Finding reservations before ${limit}`);
 
     await guesty.authenticate();
-    const reservations = await guesty.getReservations(0, 5, ['checkIn', 'checkOut', 'guest.fullName', 'guest.phone']);
+    const reservations = await guesty.getReservations(0, 5, fields);
     const pincodes = reservations.results
-        .filter(r => !!r.guest && r.checkIn < limit)
+        .filter(r => r.status == 'confirmed' && !!r.guest && r.checkIn < limit)
         .map(r => {
             const names = r.guest.fullName.split(" ");
             return {
@@ -121,6 +122,7 @@ export async function createCalendarEvents() {
         'money.netIncome',
         'money.ownerRevenue',
         'money.commission',
+        'money.fareCleaning',
         'isReturningGuest',
         'nightsCount',
         'guestsCount',
@@ -142,26 +144,7 @@ export async function createCalendarEvents() {
             credentials: JSON.parse(config.GOOGLE_CREDENTIALS)
         }).getClient();
     const calendar = google.calendar({version: 'v3', auth});
-
-    /*const existingEvents2 = (await calendar.events.list({
-        calendarId: config.GOOGLE_CALENDAR_ID,
-        timeMin: (resEvents[0] && resEvents[0].start) || new Date().toISOString(),
-        maxResults: 50,
-        singleEvents: true,
-        orderBy: 'startTime',
-    })).data.items;
-
-    existingEvents2.forEach(e => calendar.events.delete({
-        calendarId: config.GOOGLE_CALENDAR_ID,
-        eventId: e.id
-    }));
-
-    console.log(`Deleting ${existingEvents2.length} calendar entries`);
-
-    await Promise.all(existingEvents2);
-
-    return;*/
-
+  
     const existingEvents = Object.fromEntries((await calendar.events.list({
         calendarId: config.GOOGLE_CALENDAR_ID,
         timeMin: (resEvents[0] && resEvents[0].start) || new Date().toISOString(),
@@ -175,7 +158,7 @@ export async function createCalendarEvents() {
     const newEvents = resEvents
         .filter(r => {
             const existing = existingEvents[r.extendedProperties.private.reservationId];
-            return !existing && r.status !== 'cancelled';
+            return !existing && r.status == 'confirmed';
         })
         .map(r => calendar.events.insert({
             calendarId: config.GOOGLE_CALENDAR_ID,
@@ -189,7 +172,7 @@ export async function createCalendarEvents() {
     const updatedEvents = resEvents
         .filter(r => {
             const existing = existingEvents[r.extendedProperties.private.reservationId];
-            return existing && existing.extendedProperties.private.hash !== r.extendedProperties.private.hash;
+            return existing && r.status == 'confirmed' && existing.extendedProperties.private.hash !== r.extendedProperties.private.hash;
         })
         .map(r => calendar.events.update({
             calendarId: config.GOOGLE_CALENDAR_ID,
@@ -203,10 +186,10 @@ export async function createCalendarEvents() {
 
     //TODO: Delete canceled events
 
-    /* const deletedEvents = resEvents
+    const deletedEvents = resEvents
         .filter(r => {
             const existing = existingEvents[r.extendedProperties.private.reservationId];
-            return existing && (r.status == 'cancelled' || !r.confirmationCode);
+            return existing && r.status !== 'confirmed';
         })
         .map(r => calendar.events.delete({
             calendarId: config.GOOGLE_CALENDAR_ID,
@@ -214,7 +197,7 @@ export async function createCalendarEvents() {
             requestBody: r
         }));
 
-    console.log(`Deleting ${deletedEvents.length} existing calendar entries`);*/
+    console.log(`Deleting ${deletedEvents.length} existing calendar entries`);
 
     console.log('Done!');
 }
@@ -223,8 +206,7 @@ function getCalendarEventFromReservation(r) {
     const lastUpdated = r.log && r.log[0] ? r.log[0].at : r.createdAt;
     let status;
 
-    r.money.netIncome = r.money.netIncome || r.money.commission / .2;
-    r.money.ownerRevenue = r.money.ownerRevenue || r.money.netIncome - r.money.commission;
+    fixReservationMoney(r);
 
     switch(r.status) {
         case 'inquiry':
@@ -263,17 +245,33 @@ function getCalendarEventFromReservation(r) {
     return event;
 }
 
+function fixReservationMoney(r) {
+    // default commission = 20%
+    // default netIncome formula = host_payout - channel_commission - (fare_cleaning*.676)
+    r.money.netIncomeFormula = r.money.netIncome ? r.money.netIncomeFormula : 'Net income missing, recalculating based on assumed formula: host_payout - channel_commission - (fare_cleaning*.676)';
+    r.money.netIncome = r.money.netIncome || r.money.hostPayout - r.money.commission - (r.money.fareCleaning * 0.676); 
+    // default ownerRevenue formula = netIncome * 0.8 [1 - (commission / hostPayout)]
+    r.money.ownerRevenueFormula = r.money.ownerRevenue ? r.money.ownerRevenueFormula : 'Owner revenue missing, recalculating based on assumed formula: netIncome * 0.8 [1 - (commission / hostPayout)]';
+    r.money.ownerRevenue = r.money.ownerRevenue || r.money.netIncome * (1-(r.money.commission / r.money.hostPayout));
+    return r;
+}
+
 export async function exportReservationReports() {
     const fields = [
-        'source',
         'confirmationCode',
-        'listing.address.full',
-        'listing.nickname',
+        'source',
         'guest.fullName', 
         'money.hostPayout',
         'money.netIncome',
+        'money.netIncomeFormula',
         'money.ownerRevenue',
+        'money.ownerRevenueFormula',
         'money.commission',
+        'money.commissionFormula',
+        'money.totalPaid',
+        'money.totalTaxes',
+        'money.fareCleaning',
+        'money.invoiceItems',
         'isReturningGuest',
         'nightsCount',
         'guestsCount',
@@ -285,13 +283,102 @@ export async function exportReservationReports() {
     const filters = [
         {
             field: 'checkIn',
-            operator: '$lt',
-            value: 0,
-            context: 'now'
+            operator: '$gt',
+            value: 0
         }
     ];
 
+    const auth = await new Auth.GoogleAuth({
+        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+        credentials: JSON.parse(config.GOOGLE_CREDENTIALS)
+    }).getClient();
+    const sheets = google.sheets({version: 'v4', auth});
+    const rows = [];
+
     await guesty.authenticate();
-    const reservations = await guesty.getReservations(0, 25, fields, filters);
-    // console.log(reservations);
+
+    async function getRows(skip) {
+        const reservations = await guesty.getReservations(skip, 25, fields, filters);
+        const results = reservations
+            .results
+            .map(r => {
+                fixReservationMoney(r);
+                const checkInYear = r.checkIn.substring(0,4);
+                const checkInMonth = r.checkIn.substring(5, 7);
+                const checkInDay = Number(r.checkIn.substring(8, 10));
+                const checkInMonthDays = new Date(checkInYear, checkInMonth, 0).getDate();
+                const checkInMonthNights = Math.min(r.nightsCount, checkInMonthDays-checkInDay+1);
+                const nightlyOwnerRevenue = r.money.ownerRevenue / r.nightsCount
+                return [
+                    r._id,
+                    r.confirmationCode,
+                    r.source,
+                    r.guest.fullName,
+                    r.money.hostPayout,
+                    UsDollars.format(r.money.netIncome || 0),
+                    r.money.netIncomeFormula,
+                    UsDollars.format(r.money.ownerRevenue || 0),
+                    r.money.ownerRevenueFormula,
+                    UsDollars.format(r.money.commission || 0),
+                    r.money.commissionFormula,
+                    UsDollars.format(r.money.totalPaid || 0),
+                    UsDollars.format(r.money.totalTaxes || 0),
+                    UsDollars.format(r.money.fareCleaning || 0),
+                    r.money.invoiceItems
+                        .map(i => `${i.title}: ${UsDollars.format(i.amount || 0)}`)
+                        .join(', '),
+                    r.isReturningGuest,
+                    r.nightsCount,
+                    r.guestsCount,
+                    r.status,
+                    r.checkIn.substring(0, 10),
+                    r.checkOut.substring(0, 10),
+                    UsDollars.format(nightlyOwnerRevenue),
+                    checkInYear,
+                    checkInMonth,
+                    checkInMonthNights,
+                    UsDollars.format(nightlyOwnerRevenue * checkInMonthNights),
+                    r.checkOut.substring(0,4),
+                    r.checkOut.substring(5, 7),
+                    r.nightsCount - checkInMonthNights,
+                    UsDollars.format(nightlyOwnerRevenue * (r.nightsCount - checkInMonthNights))
+                ];
+            });
+        rows.push.apply(rows, results);
+
+        if (rows.length < reservations.count) {
+            await getRows(rows.length);
+        }
+    }
+
+    await getRows(0);
+
+    // add header row
+    rows.unshift(['reservationId'].concat(fields.concat(
+        'money.nightlyOwnerRevenue',
+        'checkIn.year',
+        'checkIn.month',
+        'checkIn.month.nights',
+        'checkIn.month.ownerRevenue',
+        'checkOut.year',
+        'checkOut.month',
+        'checkOut.month.nights',
+        'checkOut.month.ownerRevenue'
+    )));
+    
+    await sheets.spreadsheets.values.clear({
+        spreadsheetId: config.GOOGLE_SHEET_ID,
+        range: 'Data!A:ZZ'
+    });
+
+    await sheets.spreadsheets.values.append({
+        spreadsheetId: config.GOOGLE_SHEET_ID,
+        range: 'Data!A1',
+        valueInputOption: 'USER_ENTERED',
+        insertDataOption: 'OVERWRITE',
+        resource: {
+            majorDimension: 'ROWS',
+            values: rows
+        }
+    });
 }
