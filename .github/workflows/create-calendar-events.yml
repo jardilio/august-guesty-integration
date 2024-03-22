@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   schedule: 
     # once daily at 12a
-    - cron: '0 0 * * *'
+    - cron: '0 */6 * * *'
 
 env:
   GUESTY_USERNAME: ${{ secrets.GUESTY_USERNAME }}
