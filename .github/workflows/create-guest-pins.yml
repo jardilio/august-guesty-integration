@@ -4,8 +4,8 @@ name: Create Guest Access Codes
 on:
   push:
   workflow_dispatch:
-  # schedule: 
-    # - cron: '0 */6 * * *'
+  schedule: 
+   - cron: '0 */6 * * *'
 
 env:
   GUESTY_USERNAME: ${{ secrets.GUESTY_USERNAME }}
