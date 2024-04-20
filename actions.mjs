@@ -247,6 +247,8 @@ function getCalendarEventFromReservation(r) {
 }
 
 function fixReservationMoney(r) {
+    if (r.adjustments) return r;
+
     const adjustments = {
         hostChannelFees: Math.abs(r.money.invoiceItems.reduce((value, i) => i.title.toLowerCase() == 'host channel fee' ? i.amount : value, r.money.hostPayout * 0.0446)),
         creditCardFees: r.source.toLowerCase().startsWith('airbnb') ? 0 : r.money.hostPayout * 0.0287,
@@ -269,7 +271,7 @@ function fixReservationMoney(r) {
         netIncome: 0
     };
 
-    adjustments.grossWithTaxes = r.money.hostPayout - adjustments.hostChannelFees - adjustments.creditCardFees - adjustments.insuranceFees;
+    adjustments.grossWithTaxes = r.money.hostPayout - (r.source.toLowerCase().startsWith('airbnb') ? 0 : adjustments.hostChannelFees) - adjustments.creditCardFees - adjustments.insuranceFees;
     adjustments.stateTaxes = adjustments.vat > 0 ? adjustments.grossWithTaxes * 0.065 : 0;
     adjustments.countyTaxes = adjustments.grossWithTaxes * 0.050;
     adjustments.netIncome = adjustments.grossWithTaxes - adjustments.stateTaxes - adjustments.countyTaxes - adjustments.fareCleaning;

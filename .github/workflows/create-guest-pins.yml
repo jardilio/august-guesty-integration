@@ -2,7 +2,7 @@
 name: Create Guest Access Codes
 
 on:
-  push:
+  # push:
   workflow_dispatch:
   schedule: 
    - cron: '0 */6 * * *'
