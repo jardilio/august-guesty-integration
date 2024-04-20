@@ -278,7 +278,7 @@ function fixReservationMoney(r) {
     };
 
     adjustments.grossWithTaxes = r.money.hostPayout - (r.source.toLowerCase().startsWith('airbnb') ? 0 : adjustments.hostChannelFees) - adjustments.creditCardFees - adjustments.insuranceFees;
-    adjustments.taxableGross = adjustments.grossWithTaxes / (1 + (adjustments.vat > 0 ? adjustments.stateTaxes + adjustments.countyTaxes : adjustments.countyTaxes));
+    adjustments.taxableGross = adjustments.grossWithTaxes / (1 + (adjustments.vat > 0 ? STATE_TAX_RATE + COUNTY_TAX_RATE : COUNTY_TAX_RATE));
     adjustments.stateTaxes = adjustments.vat > 0 ? adjustments.taxableGross * STATE_TAX_RATE : 0;
     adjustments.countyTaxes = adjustments.taxableGross * COUNTY_TAX_RATE;
     adjustments.netIncome = adjustments.grossWithTaxes - adjustments.stateTaxes - adjustments.countyTaxes - adjustments.fareCleaning;
