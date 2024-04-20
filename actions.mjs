@@ -247,7 +247,7 @@ function getCalendarEventFromReservation(r) {
 }
 
 const   STATE_TAX_RATE = 0.065, 
-        COUNTY_TAX_RATE = 0.50,
+        COUNTY_TAX_RATE = 0.050,
         CREDIT_CARD_RATE = 0.0287,
         HOST_CHANNEL_RATE = 0.0446;
 
