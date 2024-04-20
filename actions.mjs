@@ -271,7 +271,7 @@ function fixReservationMoney(r) {
 
     adjustments.grossWithTaxes = r.money.hostPayout - adjustments.hostChannelFees - adjustments.creditCardFees - adjustments.insuranceFees;
     adjustments.stateTaxes = adjustments.vat > 0 ? adjustments.grossWithTaxes * 0.065 : 0;
-    adjustments.countyTaxes = 0.050;
+    adjustments.countyTaxes = adjustments.grossWithTaxes * 0.050;
     adjustments.netIncome = adjustments.grossWithTaxes - adjustments.stateTaxes - adjustments.countyTaxes - adjustments.fareCleaning;
     adjustments.commission = adjustments.netIncome * 0.2;
     adjustments.ownerRevenue = adjustments.netIncome * 0.8;
