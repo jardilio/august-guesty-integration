@@ -383,7 +383,8 @@ export async function exportReservationReports() {
                     r.nightsCount - checkInMonthNights,
                     UsDollars.format(nightlyOwnerRevenue * (r.nightsCount - checkInMonthNights)),
                     UsDollars.format(r.money.adjustments.stateTaxes),
-                    UsDollars.format(r.money.adjustments.countyTaxes)
+                    UsDollars.format(r.money.adjustments.countyTaxes),
+                    UsDollars.format(r.money.adjustments.taxableGross)
                 ];
             });
         rows.push.apply(rows, results);
@@ -407,7 +408,8 @@ export async function exportReservationReports() {
         'checkOut.month.nights',
         'checkOut.month.ownerRevenue',
         'money.adjusted.stateTaxes',
-        'money.adjusted.countyTaxes'
+        'money.adjusted.countyTaxes',
+        'money.adjusted.taxableGross'
     )));
     
     await sheets.spreadsheets.values.clear({
