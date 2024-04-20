@@ -248,9 +248,9 @@ function getCalendarEventFromReservation(r) {
 
 function fixReservationMoney(r) {
     const adjustments = {
-        hostChannelFees = Math.abs(r.money.invoiceItems.reduce((i, value) => i.title.toLowerCase() == 'host channel fee' ? i.amount : value, r.money.hostPayout * 0.0446)),
-        creditCardFees = r.source.toLowerCase().startsWith('airbnb') ? 0 : r.money.hostPayout * 0.0287,
-        insuranceFees = r.money.invoiceItems.reduce((i, value) => {
+        hostChannelFees: Math.abs(r.money.invoiceItems.reduce((i, value) => i.title.toLowerCase() == 'host channel fee' ? i.amount : value, r.money.hostPayout * 0.0446)),
+        creditCardFees: r.source.toLowerCase().startsWith('airbnb') ? 0 : r.money.hostPayout * 0.0287,
+        insuranceFees: r.money.invoiceItems.reduce((i, value) => {
             switch(i.title.toLowerCase()) {
                 case 'management fee':
                 case 'incidentals fee':
@@ -262,11 +262,11 @@ function fixReservationMoney(r) {
         vat: r.money.invoiceItems.reduce((i, value) => i.title.toLowerCase() == "vat" ? i.amount : value, 0),
         fareCleaning: r.nightsCount > 7 ? 265 : 165,
         grossWithTaxes: 0,
-        stateTaxes = 0,
-        countyTaxes = 0,
-        commission = 0,
-        ownerRevenue = 0,
-        netIncome = 0
+        stateTaxes: 0,
+        countyTaxes: 0,
+        commission: 0,
+        ownerRevenue: 0,
+        netIncome: 0
     };
 
     adjustments.grossWithTaxes = r.money.hostPayout - adjustments.hostChannelFees - adjustments.creditCardFees - adjustments.insuranceFees;
