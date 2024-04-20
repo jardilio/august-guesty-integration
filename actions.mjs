@@ -246,14 +246,17 @@ function getCalendarEventFromReservation(r) {
     return event;
 }
 
-const STATE_TAX_RATE = 0.065, COUNTY_TAX_RATE = 0.50;
+const   STATE_TAX_RATE = 0.065, 
+        COUNTY_TAX_RATE = 0.50,
+        CREDIT_CARD_RATE = 0.0287,
+        HOST_CHANNEL_RATE = 0.0446;
 
 function fixReservationMoney(r) {
     if (r.adjustments) return r;
 
     const adjustments = {
-        hostChannelFees: Math.abs(r.money.invoiceItems.reduce((value, i) => i.title.toLowerCase() == 'host channel fee' ? i.amount : value, r.money.hostPayout * 0.0446)),
-        creditCardFees: r.source.toLowerCase().startsWith('airbnb') ? 0 : r.money.hostPayout * 0.0287,
+        hostChannelFees: Math.abs(r.money.invoiceItems.reduce((value, i) => i.title.toLowerCase() == 'host channel fee' ? i.amount : value, r.money.hostPayout * HOST_CHANNEL_RATE)),
+        creditCardFees: r.source.toLowerCase().startsWith('airbnb') ? 0 : r.money.hostPayout * CREDIT_CARD_RATE,
         insuranceFees: r.money.invoiceItems.reduce((value, i) => {
             switch(i.title.toLowerCase()) {
                 case 'management fee':
@@ -263,7 +266,7 @@ function fixReservationMoney(r) {
                     return value;
             }
         }, 0),
-        vat: r.money.invoiceItems.reduce((value, i) => i.title.toLowerCase() == "vat" ? i.amount : value, 0),
+        vat: r.money.invoiceItems.reduce((value, i) => i.title.toLowerCase() == 'vat' ? i.amount : value, 0),
         fareCleaning: r.nightsCount > 7 ? 265 : 165,
         grossWithTaxes: 0,
         taxableGross: 0,
@@ -378,7 +381,9 @@ export async function exportReservationReports() {
                     r.checkOut.substring(0,4),
                     r.checkOut.substring(5, 7),
                     r.nightsCount - checkInMonthNights,
-                    UsDollars.format(nightlyOwnerRevenue * (r.nightsCount - checkInMonthNights))
+                    UsDollars.format(nightlyOwnerRevenue * (r.nightsCount - checkInMonthNights)),
+                    UsDollars.format(r.money.adjustments.stateTaxes),
+                    UsDollars.format(r.money.adjustments.countyTaxes)
                 ];
             });
         rows.push.apply(rows, results);
@@ -400,7 +405,9 @@ export async function exportReservationReports() {
         'checkOut.year',
         'checkOut.month',
         'checkOut.month.nights',
-        'checkOut.month.ownerRevenue'
+        'checkOut.month.ownerRevenue',
+        'money.adjusted.stateTaxes',
+        'money.adjusted.countyTaxes'
     )));
     
     await sheets.spreadsheets.values.clear({
