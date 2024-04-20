@@ -123,6 +123,7 @@ export async function createCalendarEvents() {
         'money.ownerRevenue',
         'money.commission',
         'money.fareCleaning',
+        'money.invoiceItems',
         'isReturningGuest',
         'nightsCount',
         'guestsCount',
@@ -245,14 +246,53 @@ function getCalendarEventFromReservation(r) {
     return event;
 }
 
+const   STATE_TAX_RATE = 0.065, 
+        COUNTY_TAX_RATE = 0.050,
+        CREDIT_CARD_RATE = 0.0287,
+        HOST_CHANNEL_RATE = 0.0446;
+
 function fixReservationMoney(r) {
-    // default commission = 20%
-    // default netIncome formula = host_payout - channel_commission - (fare_cleaning*.676)
-    r.money.netIncomeFormula = r.money.netIncome ? r.money.netIncomeFormula : 'Net income missing, recalculating based on assumed formula: host_payout - channel_commission - (fare_cleaning*.676)';
-    r.money.netIncome = r.money.netIncome || r.money.hostPayout - r.money.commission - (r.money.fareCleaning * 0.676); 
-    // default ownerRevenue formula = netIncome * 0.8 [1 - (commission / hostPayout)]
-    r.money.ownerRevenueFormula = r.money.ownerRevenue ? r.money.ownerRevenueFormula : 'Owner revenue missing, recalculating based on assumed formula: netIncome * 0.8 [1 - (commission / hostPayout)]';
-    r.money.ownerRevenue = r.money.ownerRevenue || r.money.netIncome * (1-(r.money.commission / r.money.hostPayout));
+    if (r.adjustments) return r;
+
+    const adjustments = {
+        hostChannelFees: Math.abs(r.money.invoiceItems.reduce((value, i) => i.title.toLowerCase() == 'host channel fee' ? i.amount : value, r.money.hostPayout * HOST_CHANNEL_RATE)),
+        creditCardFees: r.source.toLowerCase().startsWith('airbnb') ? 0 : r.money.hostPayout * CREDIT_CARD_RATE,
+        insuranceFees: r.money.invoiceItems.reduce((value, i) => {
+            switch(i.title.toLowerCase()) {
+                case 'management fee':
+                case 'incidentals fee':
+                    return i.amount;
+                default: 
+                    return value;
+            }
+        }, 0),
+        vat: r.money.invoiceItems.reduce((value, i) => i.title.toLowerCase() == 'vat' ? i.amount : value, 0),
+        fareCleaning: r.nightsCount > 7 ? 265 : 165,
+        grossWithTaxes: 0,
+        taxableGross: 0,
+        stateTaxes: 0,
+        countyTaxes: 0,
+        commission: 0,
+        ownerRevenue: 0,
+        netIncome: 0
+    };
+
+    adjustments.grossWithTaxes = r.money.hostPayout - (r.source.toLowerCase().startsWith('airbnb') ? 0 : adjustments.hostChannelFees) - adjustments.creditCardFees - adjustments.insuranceFees;
+    adjustments.taxableGross = adjustments.grossWithTaxes / (1 + (adjustments.vat > 0 ? STATE_TAX_RATE + COUNTY_TAX_RATE : COUNTY_TAX_RATE));
+    adjustments.stateTaxes = adjustments.vat > 0 ? adjustments.taxableGross * STATE_TAX_RATE : 0;
+    adjustments.countyTaxes = adjustments.taxableGross * COUNTY_TAX_RATE;
+    adjustments.netIncome = adjustments.grossWithTaxes - adjustments.stateTaxes - adjustments.countyTaxes - adjustments.fareCleaning;
+    adjustments.commission = adjustments.netIncome * 0.2;
+    adjustments.ownerRevenue = adjustments.netIncome * 0.8;
+    
+    r.money.netIncome = adjustments.netIncome;
+    r.money.ownerRevenue = adjustments.ownerRevenue;
+    r.money.commission = adjustments.commission;
+    r.money.fareCleaning = adjustments.fareCleaning;
+    r.money.totalTaxes = adjustments.stateTaxes + adjustments.countyTaxes;
+    r.money.hostPayout = adjustments.grossWithTaxes;
+    r.money.adjustments = adjustments;
+    
     return r;
 }
 
@@ -341,7 +381,13 @@ export async function exportReservationReports() {
                     r.checkOut.substring(0,4),
                     r.checkOut.substring(5, 7),
                     r.nightsCount - checkInMonthNights,
-                    UsDollars.format(nightlyOwnerRevenue * (r.nightsCount - checkInMonthNights))
+                    UsDollars.format(nightlyOwnerRevenue * (r.nightsCount - checkInMonthNights)),
+                    UsDollars.format(r.money.adjustments.stateTaxes),
+                    UsDollars.format(r.money.adjustments.countyTaxes),
+                    UsDollars.format(r.money.adjustments.taxableGross),
+                    UsDollars.format(r.money.adjustments.creditCardFees),
+                    UsDollars.format(r.money.adjustments.insuranceFees),
+                    UsDollars.format(r.money.adjustments.hostChannelFees)
                 ];
             });
         rows.push.apply(rows, results);
@@ -363,7 +409,13 @@ export async function exportReservationReports() {
         'checkOut.year',
         'checkOut.month',
         'checkOut.month.nights',
-        'checkOut.month.ownerRevenue'
+        'checkOut.month.ownerRevenue',
+        'money.adjusted.stateTaxes',
+        'money.adjusted.countyTaxes',
+        'money.adjusted.taxableGross',
+        'money.adjusted.creditCardFees',
+        'money.adjusted.insuranceFees',
+        'money.adjusted.hostChannelFees'
     )));
     
     await sheets.spreadsheets.values.clear({
