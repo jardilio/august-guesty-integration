@@ -279,7 +279,9 @@ function fixReservationMoney(r) {
     r.money.netIncome = adjustments.netIncome;
     r.money.ownerRevenue = adjustments.ownerRevenue;
     r.money.commission = adjustments.commission;
-    r.money.fareCleaning = adjustments.fareCleaning
+    r.money.fareCleaning = adjustments.fareCleaning;
+    r.money.totalTaxes = adjustments.stateTaxes + adjustments.countyTaxes;
+    r.money.hostPayout = adjustments.grossWithTaxes;
     r.money.adjustments = adjustments;
     
     return r;
