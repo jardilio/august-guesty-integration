@@ -246,6 +246,8 @@ function getCalendarEventFromReservation(r) {
     return event;
 }
 
+const STATE_TAX_RATE = 0.065, COUNTY_TAX_RATE = 0.50;
+
 function fixReservationMoney(r) {
     if (r.adjustments) return r;
 
@@ -264,6 +266,7 @@ function fixReservationMoney(r) {
         vat: r.money.invoiceItems.reduce((value, i) => i.title.toLowerCase() == "vat" ? i.amount : value, 0),
         fareCleaning: r.nightsCount > 7 ? 265 : 165,
         grossWithTaxes: 0,
+        taxableGross: 0,
         stateTaxes: 0,
         countyTaxes: 0,
         commission: 0,
@@ -272,8 +275,9 @@ function fixReservationMoney(r) {
     };
 
     adjustments.grossWithTaxes = r.money.hostPayout - (r.source.toLowerCase().startsWith('airbnb') ? 0 : adjustments.hostChannelFees) - adjustments.creditCardFees - adjustments.insuranceFees;
-    adjustments.stateTaxes = adjustments.vat > 0 ? adjustments.grossWithTaxes * 0.065 : 0;
-    adjustments.countyTaxes = adjustments.grossWithTaxes * 0.050;
+    adjustments.taxableGross = adjustments.grossWithTaxes / (1 + (adjustments.vat > 0 ? adjustments.stateTaxes + adjustments.countyTaxes : adjustments.countyTaxes));
+    adjustments.stateTaxes = adjustments.vat > 0 ? adjustments.taxableGross * STATE_TAX_RATE : 0;
+    adjustments.countyTaxes = adjustments.taxableGross * COUNTY_TAX_RATE;
     adjustments.netIncome = adjustments.grossWithTaxes - adjustments.stateTaxes - adjustments.countyTaxes - adjustments.fareCleaning;
     adjustments.commission = adjustments.netIncome * 0.2;
     adjustments.ownerRevenue = adjustments.netIncome * 0.8;
