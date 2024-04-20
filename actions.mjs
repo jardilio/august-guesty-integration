@@ -123,6 +123,7 @@ export async function createCalendarEvents() {
         'money.ownerRevenue',
         'money.commission',
         'money.fareCleaning',
+        'money.invoiceItems',
         'isReturningGuest',
         'nightsCount',
         'guestsCount',
@@ -246,13 +247,41 @@ function getCalendarEventFromReservation(r) {
 }
 
 function fixReservationMoney(r) {
-    // default commission = 20%
-    // default netIncome formula = host_payout - channel_commission - (fare_cleaning*.676)
-    r.money.netIncomeFormula = r.money.netIncome ? r.money.netIncomeFormula : 'Net income missing, recalculating based on assumed formula: host_payout - channel_commission - (fare_cleaning*.676)';
-    r.money.netIncome = r.money.netIncome || r.money.hostPayout - r.money.commission - (r.money.fareCleaning * 0.676); 
-    // default ownerRevenue formula = netIncome * 0.8 [1 - (commission / hostPayout)]
-    r.money.ownerRevenueFormula = r.money.ownerRevenue ? r.money.ownerRevenueFormula : 'Owner revenue missing, recalculating based on assumed formula: netIncome * 0.8 [1 - (commission / hostPayout)]';
-    r.money.ownerRevenue = r.money.ownerRevenue || r.money.netIncome * (1-(r.money.commission / r.money.hostPayout));
+    const adjustments = {
+        hostChannelFees = Math.abs(r.money.invoiceItems.reduce((i, value) => i.title.toLowerCase() == 'host channel fee' ? i.amount : value, r.money.hostPayout * 0.0446)),
+        creditCardFees = r.source.toLowerCase().startsWith('airbnb') ? 0 : r.money.hostPayout * 0.0287,
+        insuranceFees = r.money.invoiceItems.reduce((i, value) => {
+            switch(i.title.toLowerCase()) {
+                case 'management fee':
+                case 'incidentals fee':
+                    return i.amount;
+                default: 
+                    return value;
+            }
+        }, 0),
+        vat: r.money.invoiceItems.reduce((i, value) => i.title.toLowerCase() == "vat" ? i.amount : value, 0),
+        fareCleaning: r.nightsCount > 7 ? 265 : 165,
+        grossWithTaxes: 0,
+        stateTaxes = 0,
+        countyTaxes = 0,
+        commission = 0,
+        ownerRevenue = 0,
+        netIncome = 0
+    };
+
+    adjustments.grossWithTaxes = r.money.hostPayout - adjustments.hostChannelFees - adjustments.creditCardFees - adjustments.insuranceFees;
+    adjustments.stateTaxes = adjustments.vat > 0 ? r.moneyadjustments.grossWithTaxes * 0.065 : 0;
+    adjustments.countyTaxes = 0.050;
+    adjustments.netIncome = adjustments.grossWithTaxes - adjustments.stateTaxes - adjustments.adjustments.countyTaxes - adjustments.fareCleaning;
+    adjustments.commission = adjustments.netIncome * 0.2;
+    adjustments.ownersRevenue = adjustments.netIncome * 0.8;
+    
+    r.money.netIncome = adjustments.netIncome;
+    r.money.ownerRevenue = adjustments.ownerRevenue;
+    r.money.commission = adjustments.commission;
+    r.money.fareCleaning = adjustments.fareCleaning
+    r.money.adjustments = adjustments;
+    
     return r;
 }
 
