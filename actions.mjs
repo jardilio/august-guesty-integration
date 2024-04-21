@@ -8,9 +8,7 @@ import { google, Auth } from "googleapis";
 
 const DEFAULT_RESERVATION_FIELDS = [
     'confirmationCode',
-    'source',         
-    'listing.address.full',
-    'listing.nickname',
+    'source',
     'guest.fullName', 
     'money.hostPayout',
     'money.netIncome',
@@ -28,7 +26,9 @@ const DEFAULT_RESERVATION_FIELDS = [
     'guestsCount',
     'status',
     'checkIn',
-    'checkOut'
+    'checkOut',         
+    'listing.address.full',
+    'listing.nickname'
 ];
 
 const UsDollars = new Intl.NumberFormat('en-US', {
