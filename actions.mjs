@@ -6,6 +6,29 @@ import fs from "node:fs";
 import crypto from "node:crypto";
 import { google, Auth } from "googleapis";
 
+const DEFAULT_RESERVATION_FIELDS = [
+    'confirmationCode',
+    'source',
+    'guest.fullName', 
+    'money.hostPayout',
+    'money.netIncome',
+    'money.netIncomeFormula',
+    'money.ownerRevenue',
+    'money.ownerRevenueFormula',
+    'money.commission',
+    'money.commissionFormula',
+    'money.totalPaid',
+    'money.totalTaxes',
+    'money.fareCleaning',
+    'money.invoiceItems',
+    'isReturningGuest',
+    'nightsCount',
+    'guestsCount',
+    'status',
+    'checkIn',
+    'checkOut'
+];
+
 const UsDollars = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -112,28 +135,8 @@ export async function createGuestPins() {
 }
 
 export async function createCalendarEvents() {
-    const fields = [
-        'source',
-        'confirmationCode',
-        'listing.address.full',
-        'listing.nickname',
-        'guest.fullName', 
-        'money.hostPayout',
-        'money.netIncome',
-        'money.ownerRevenue',
-        'money.commission',
-        'money.fareCleaning',
-        'money.invoiceItems',
-        'isReturningGuest',
-        'nightsCount',
-        'guestsCount',
-        'status',
-        'checkIn',
-        'checkOut'
-    ];
-
     await guesty.authenticate();
-    const resEvents = (await guesty.getReservations(0, 25, fields))
+    const resEvents = (await guesty.getReservations(0, 25, DEFAULT_RESERVATION_FIELDS))
         .results
         .filter(r => !!r.guest && !!r.confirmationCode)
         .map(r => getCalendarEventFromReservation(r));
@@ -297,29 +300,6 @@ function fixReservationMoney(r) {
 }
 
 export async function exportReservationReports() {
-    const fields = [
-        'confirmationCode',
-        'source',
-        'guest.fullName', 
-        'money.hostPayout',
-        'money.netIncome',
-        'money.netIncomeFormula',
-        'money.ownerRevenue',
-        'money.ownerRevenueFormula',
-        'money.commission',
-        'money.commissionFormula',
-        'money.totalPaid',
-        'money.totalTaxes',
-        'money.fareCleaning',
-        'money.invoiceItems',
-        'isReturningGuest',
-        'nightsCount',
-        'guestsCount',
-        'status',
-        'checkIn',
-        'checkOut'
-    ];
-
     const filters = [
         {
             field: 'checkIn',
@@ -338,7 +318,7 @@ export async function exportReservationReports() {
     await guesty.authenticate();
 
     async function getRows(skip) {
-        const reservations = await guesty.getReservations(skip, 25, fields, filters);
+        const reservations = await guesty.getReservations(skip, 25, DEFAULT_RESERVATION_FIELDS, filters);
         const results = reservations
             .results
             .map(r => {
