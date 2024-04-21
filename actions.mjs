@@ -81,6 +81,7 @@ export async function validateAugust() {
 export async function createGuestPins() {
     const today = new Date(); 
     const limit = new Date(today.setDate(today.getDate() + 7)).toISOString();
+    const now = today.toISOString();
     const fields = [
         'checkIn', 
         'checkOut', 
@@ -94,7 +95,7 @@ export async function createGuestPins() {
     await guesty.authenticate();
     const reservations = await guesty.getReservations(0, 5, fields);
     const pincodes = reservations.results
-        .filter(r => r.status == 'confirmed' && !!r.guest && r.checkIn < limit)
+        .filter(r => r.status == 'confirmed' && !!r.guest && r.checkIn < limit && r.checkOut > now)
         .map(r => {
             const names = r.guest.fullName.split(" ");
             return {
