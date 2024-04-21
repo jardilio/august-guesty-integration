@@ -81,7 +81,7 @@ export async function validateAugust() {
 export async function createGuestPins() {
     const today = new Date(); 
     const limit = new Date(today.setDate(today.getDate() + 7)).toISOString();
-    const now = today.toISOString();
+    const now = new Date().toISOString();
     const fields = [
         'checkIn', 
         'checkOut', 
