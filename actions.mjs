@@ -8,7 +8,9 @@ import { google, Auth } from "googleapis";
 
 const DEFAULT_RESERVATION_FIELDS = [
     'confirmationCode',
-    'source',
+    'source',         
+    'listing.address.full',
+    'listing.nickname',
     'guest.fullName', 
     'money.hostPayout',
     'money.netIncome',
@@ -380,7 +382,7 @@ export async function exportReservationReports() {
     await getRows(0);
 
     // add header row
-    rows.unshift(['reservationId'].concat(fields.concat(
+    rows.unshift(['reservationId'].concat(DEFAULT_RESERVATION_FIELDS.concat(
         'money.nightlyOwnerRevenue',
         'checkIn.year',
         'checkIn.month',
