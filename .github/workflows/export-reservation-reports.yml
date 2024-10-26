@@ -2,11 +2,11 @@
 name: Export Reservation Reports
 
 on:
-  push: 
   workflow_dispatch:
-  schedule: 
-    # once daily at 12a
-    - cron: '0 0 * * *'
+  # push: 
+  # schedule: 
+  #   # once daily at 12a
+  #   - cron: '0 0 * * *'
 
 env:
   GUESTY_USERNAME: ${{ secrets.GUESTY_USERNAME }}

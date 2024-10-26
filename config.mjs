@@ -15,5 +15,9 @@ export const {
     AUGUST_LOCK,
     GOOGLE_CREDENTIALS,
     GOOGLE_CALENDAR_ID,
-    GOOGLE_SHEET_ID
+    GOOGLE_SHEET_ID,
+    STREAMLINE_EMAIL,
+    STREAMLINE_PASSWORD
 } = process.env;
+
+export const STREAMLINE_UNIT_ID = parseInt(process.env.STREAMLINE_UNIT_ID);
