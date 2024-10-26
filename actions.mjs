@@ -49,6 +49,13 @@ export async function validateAugust() {
     console.log('Done!');
 }
 
+function dateTimeInTimezone(date, hours, timeZone = "America/New_York") {
+    const local = new Date(date);
+    const adjusted = new Date(local.toLocaleString('en-US', { timeZone }));
+    const offset = local.getTime() - adjusted.getTime();
+    return new Date(local.getTime() + offset + (hours * 60 * 60 * 1000));
+}
+
 /**
  * Checks for Streamline reservations in next 7 days and creates a 
  * temporary access code in August for the guest that only works
@@ -73,8 +80,8 @@ export async function createGuestPins() {
         return {
             firstName: r.first_name,
             lastName: r.last_name,
-            accessStartTime: new Date(r.startdate),
-            accessEndTime: new Date(r.enddate),
+            accessStartTime: dateTimeInTimezone(r.startdate, 16),
+            accessEndTime: dateTimeInTimezone(r.enddate, 10),
             pin: r.phone ? r.phone.trim().slice(-4) : r.startdate.split('/')[0] + r.startdate.split('/')[1],
             lockID: config.AUGUST_LOCK
         }
