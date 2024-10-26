@@ -1,4 +1,4 @@
-import StreamlineClient from "./streamline-client.mjs"
+import GuestyClient from "./guesty-client.mjs"
 import AugustClient from "./august-client.mjs";
 import Prompt from 'prompt-sync';
 import * as config from "./config.mjs";
@@ -6,15 +6,39 @@ import fs from "node:fs";
 import crypto from "node:crypto";
 import { google, Auth } from "googleapis";
 
+const DEFAULT_RESERVATION_FIELDS = [
+    'confirmationCode',
+    'source',
+    'guest.fullName', 
+    'money.hostPayout',
+    'money.netIncome',
+    'money.netIncomeFormula',
+    'money.ownerRevenue',
+    'money.ownerRevenueFormula',
+    'money.commission',
+    'money.commissionFormula',
+    'money.totalPaid',
+    'money.totalTaxes',
+    'money.fareCleaning',
+    'money.invoiceItems',
+    'isReturningGuest',
+    'nightsCount',
+    'guestsCount',
+    'status',
+    'checkIn',
+    'checkOut'
+];
+
 const UsDollars = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
 });
 
-const streamline = new StreamlineClient({
-    email: config.STREAMLINE_EMAIL,
-    password: config.STREAMLINE_PASSWORD,
-    unit_id: config.STREAMLINE_UNIT_ID
+const guesty = new GuestyClient({
+    username: config.GUESTY_USERNAME,
+    password: config.GUESTY_PASSWORD,
+    accountId: config.GUESTY_ACCOUNT,
+    apiKey: config.GUESTY_API_KEY
 });
 
 const august = new AugustClient({
@@ -30,9 +54,9 @@ export async function getLocks() {
     console.log(await response.json());
 }
 
-// export function dumpConfig() {
-//     fs.writeFileSync('config.json', JSON.stringify(config, null, 2));
-// }
+export function dumpConfig() {
+    fs.writeFileSync('config.json', JSON.stringify(config, null, 2));
+}
 
 /**
  * Use to validate the apiKey and installId for this application with MFA, 
@@ -49,15 +73,8 @@ export async function validateAugust() {
     console.log('Done!');
 }
 
-function dateTimeInTimezone(date, hours, timeZone = "America/New_York") {
-    const local = new Date(date);
-    const adjusted = new Date(local.toLocaleString('en-US', { timeZone }));
-    const offset = local.getTime() - adjusted.getTime();
-    return new Date(local.getTime() + offset + (hours * 60 * 60 * 1000));
-}
-
 /**
- * Checks for Streamline reservations in next 7 days and creates a 
+ * Checks for Guesty reservations in next 7 days and creates a 
  * temporary access code in August for the guest that only works
  * during the time of their stay.
  */
@@ -65,27 +82,31 @@ export async function createGuestPins() {
     const today = new Date(); 
     const limit = new Date(today.setDate(today.getDate() + 7)).toISOString();
     const now = new Date().toISOString();
+    const fields = [
+        'checkIn', 
+        'checkOut', 
+        'guest.fullName',
+        'guest.phone',
+        'status'
+    ];
 
     console.log(`Finding reservations before ${limit}`);
 
-    await streamline.authenticate();
-    const reservations = (await streamline.getReservations()).data.filter(r => r.status_name == 'Booked' && new Date(r.startdate).toISOString() < limit && new Date(r.enddate).toISOString() > now);
-    
-    for (const r of reservations) {
-        // need to wait to fetch all phone numbers from reservation details
-        Object.assign(r, (await streamline.getReservation(r.confirmation_id)).data.reservation);
-    }
-
-    const pincodes = reservations.map(r => {
-        return {
-            firstName: r.first_name,
-            lastName: r.last_name,
-            accessStartTime: dateTimeInTimezone(r.startdate, 16),
-            accessEndTime: dateTimeInTimezone(r.enddate, 10),
-            pin: r.phone ? r.phone.trim().slice(-4) : r.startdate.split('/')[0] + r.startdate.split('/')[1],
-            lockID: config.AUGUST_LOCK
-        }
-    });
+    await guesty.authenticate();
+    const reservations = await guesty.getReservations(0, 5, fields);
+    const pincodes = reservations.results
+        .filter(r => r.status == 'confirmed' && !!r.guest && r.checkIn < limit && r.checkOut > now)
+        .map(r => {
+            const names = r.guest.fullName.split(" ");
+            return {
+                firstName: names[0],
+                lastName: names[1],
+                accessStartTime: new Date(Date.parse(r.checkIn)),
+                accessEndTime: new Date(Date.parse(r.checkOut)),
+                pin: r.guest.phone ? r.guest.phone.trim().slice(-4) : r.checkIn.split('-')[1] + r.checkIn.split('-')[2],
+                lockID: config.AUGUST_LOCK
+            }
+        });
 
     console.log(`Found ${pincodes.length} upcoming guest reservations`);
 
@@ -114,7 +135,7 @@ export async function createGuestPins() {
     console.log('Done!');
 }
 
-/*export async function createCalendarEvents() {
+export async function createCalendarEvents() {
     await guesty.authenticate();
     const resEvents = (await guesty.getReservations(0, 25, ['listing.address.full','listing.nickname'].concat(DEFAULT_RESERVATION_FIELDS)))
         .results
@@ -393,4 +414,4 @@ export async function exportReservationReports() {
             values: rows
         }
     });
-}*/
+}

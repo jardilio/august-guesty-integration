@@ -2,11 +2,11 @@
 name: Create Calendar Events
 
 on:
-  push:
   workflow_dispatch:
-  schedule: 
-    # once daily at 12a
-    - cron: '0 */6 * * *'
+  #push:
+  #schedule: 
+  #  # once daily at 12a
+  #  - cron: '0 */6 * * *'
 
 env:
   GUESTY_USERNAME: ${{ secrets.GUESTY_USERNAME }}
