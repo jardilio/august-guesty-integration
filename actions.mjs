@@ -49,11 +49,11 @@ export async function validateAugust() {
     console.log('Done!');
 }
 
-function dateTimeInTimezone(date, hours, timeZone = "America/New_York") {
+function dateTimeInTimezone(date, hours = 0, minutes = 0, timeZone = "America/New_York") {
     const local = new Date(date);
     const adjusted = new Date(local.toLocaleString('en-US', { timeZone }));
     const offset = local.getTime() - adjusted.getTime();
-    return new Date(local.getTime() + offset + (hours * 60 * 60 * 1000));
+    return new Date(local.getTime() + offset + (hours * 60 * 60 * 1000) + (minutes * 60 * 1000));
 }
 
 /**
@@ -80,8 +80,8 @@ export async function createGuestPins() {
         return {
             firstName: r.first_name,
             lastName: r.last_name,
-            accessStartTime: dateTimeInTimezone(r.startdate, 16),
-            accessEndTime: dateTimeInTimezone(r.enddate, 10),
+            accessStartTime: dateTimeInTimezone(r.startdate, 15, 30),
+            accessEndTime: dateTimeInTimezone(r.enddate, 10, 30),
             pin: r.phone ? r.phone.trim().slice(-4) : r.startdate.split('/')[0] + r.startdate.split('/')[1],
             lockID: config.AUGUST_LOCK
         }
