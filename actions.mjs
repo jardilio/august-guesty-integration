@@ -115,8 +115,9 @@ export async function createGuestPins() {
     // get existing guest access codes from lock and find reservation blocks not yet created
     const existing = await august.getLockPins(config.AUGUST_LOCK);
     const newcodes = pincodes.filter(pincode => {
-        const name = pincode.firstName.trim().toLowerCase() + pincode.lastName.trim().toLowerCase();
-        return ![].concat(existing.loaded, existing.created).find(e => e.firstName.trim().toLowerCase() + e.lastName.trim().toLowerCase() == name);
+        //const name = pincode.firstName.trim().toLowerCase() + pincode.lastName.trim().toLowerCase();
+        //return ![].concat(existing.loaded, existing.created).find(e => e.firstName.trim().toLowerCase() + e.lastName.trim().toLowerCase() == name);
+		return ![].concat(existing.loaded, existing.created).find(e => e.pin == pincode.pin);
     });
 
     console.log(`${newcodes.length} guests require an access code which has yet to be created`);
