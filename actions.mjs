@@ -125,6 +125,9 @@ export async function createGuestPins() {
     async function commit() {
         if (newcodes.length > 0) {
             const pin = newcodes.shift();
+            //buffer 30 minutes on checkin/checkout
+			pin.accessStartTime.setMinutes(pin.accessStartTime.getMinutes()-30);
+			pin.accessEndTime.setMinutes(pin.accessEndTime.getMinutes()+30);
             console.log(`Creating guest access code for ${pin.firstName} ${pin.lastName.charAt(0)}`);
             await august.createGuestEntryPin(pin);
             await commit();
