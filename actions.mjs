@@ -38,7 +38,8 @@ const guesty = new GuestyClient({
     username: config.GUESTY_USERNAME,
     password: config.GUESTY_PASSWORD,
     accountId: config.GUESTY_ACCOUNT,
-    apiKey: config.GUESTY_API_KEY
+    apiKey: config.GUESTY_API_KEY,
+    listingId: config.GUESTY_LISTING
 });
 
 const august = new AugustClient({
@@ -147,6 +148,8 @@ export async function createCalendarEvents() {
         .map(r => getCalendarEventFromReservation(r));
 
     console.log(`Found ${resEvents.length} reservations`);
+
+    process.exit();
 
     const auth = await new Auth.GoogleAuth({
             scopes: ['https://www.googleapis.com/auth/calendar.events'],

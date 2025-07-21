@@ -32,8 +32,8 @@ jobs:
       - name: CR3306
         run: node . createCalendarEvents
 
-      # - name: 16F
-      #   run: node . createCalendarEvents
-      #   env:
-      #     GUESTY_LISTING: ${{ secrets.GUESTY_LISTING_16F }}
-      #     GOOGLE_CALENDAR_ID: ${{ secrets.GOOGLE_CALENDAR_ID_16F }}
+      - name: 16F
+        run: node . createCalendarEvents
+        env:
+          GUESTY_LISTING: ${{ secrets.GUESTY_LISTING_16F }}
+          GOOGLE_CALENDAR_ID: ${{ secrets.GOOGLE_CALENDAR_ID_16F }}

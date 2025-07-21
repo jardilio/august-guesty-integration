@@ -11,6 +11,7 @@ export default class GuestyClient extends JSONClient {
      * @param {string} config.password
      * @param {string} config.accountId
      * @param {string} config.apiKey
+     * @param {string} config.listingId
      * @returns 
      */
      constructor(config) {
@@ -99,6 +100,11 @@ export default class GuestyClient extends JSONClient {
                 operator: '$gt',
                 value: 0,
                 context: 'now'
+            },
+            {
+                field: 'listingId', 
+                operator: '$eq', 
+                value: this.#config.listingId
             }
         ];
 
