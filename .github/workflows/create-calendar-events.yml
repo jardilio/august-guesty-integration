@@ -18,7 +18,6 @@ env:
 
 jobs:
   run:
-    name: CR3306
     timeout-minutes: 10
     runs-on: ubuntu-latest
     container: node:18-alpine
@@ -30,22 +29,10 @@ jobs:
       - name: NPM Install
         run: npm install
 
-      - name: Execute
+      - name: CR3306
         run: node . createCalendarEvents
-  run:
-    name: 16F
-    timeout-minutes: 10
-    runs-on: ubuntu-latest
-    container: node:18-alpine
-    steps:
 
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: NPM Install
-        run: npm install
-
-      - name: Execute
+      - name: 16F
         run: node . createCalendarEvents
         env:
           GUESTY_LISTING: ${{ secrets.GUESTY_LISTING_16F }}
