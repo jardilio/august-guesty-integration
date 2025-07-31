@@ -149,8 +149,6 @@ export async function createCalendarEvents() {
 
     console.log(`Found ${resEvents.length} reservations`);
 
-    process.exit();
-
     const auth = await new Auth.GoogleAuth({
             scopes: ['https://www.googleapis.com/auth/calendar.events'],
             credentials: JSON.parse(config.GOOGLE_CREDENTIALS)
