@@ -44,3 +44,4 @@ jobs:
         run: node . createGuestPins
         env:
           AUGUST_LOCK: ${{ secrets.LOCK_16F_FRONT }}
+          GUESTY_LISTING: ${{ secrets.GUESTY_LISTING_16F }}
