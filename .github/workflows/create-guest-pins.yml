@@ -7,6 +7,10 @@ on:
   schedule: 
    - cron: '0 */6 * * *'
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
 env:
   # STREAMLINE_EMAIL: ${{ secrets.STREAMLINE_EMAIL }}
   # STREAMLINE_PASSWORD: ${{ secrets.STREAMLINE_PASSWORD }}
@@ -39,9 +43,11 @@ jobs:
         run: node . createGuestPins
         env:
           AUGUST_LOCK: ${{ secrets.LOCK_3306_FRONT }}
+				continue-on-error: true
 
       - name: 16F
         run: node . createGuestPins
         env:
           AUGUST_LOCK: ${{ secrets.LOCK_16F_FRONT }}
           GUESTY_LISTING: ${{ secrets.GUESTY_LISTING_16F }}
+				continue-on-error: true
