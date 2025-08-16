@@ -40,14 +40,14 @@ jobs:
         run: npm install
 
       - name: 3306CR
+	  	continue-on-error: true
         run: node . createGuestPins
         env:
           AUGUST_LOCK: ${{ secrets.LOCK_3306_FRONT }}
-		continue-on-error: true
 
       - name: 16F
+	  	continue-on-error: true
         run: node . createGuestPins
         env:
           AUGUST_LOCK: ${{ secrets.LOCK_16F_FRONT }}
           GUESTY_LISTING: ${{ secrets.GUESTY_LISTING_16F }}
-		continue-on-error: true
