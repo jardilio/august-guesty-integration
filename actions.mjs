@@ -161,7 +161,9 @@ export async function createCalendarEvents() {
         maxResults: 100,
         singleEvents: true,
         orderBy: 'startTime',
-    })).data.items.map(e => [e.extendedProperties.private.reservationId, e]));
+    })).data.items
+		.filter(e => e.extendedProperties && e.extendedProperties.private && e.extendedProperties.private.reservationId)
+		.map(e => [e.extendedProperties.private.reservationId, e]));
     
     console.log(`Found ${Object.keys(existingEvents).length} existing calendar entries`);
 
