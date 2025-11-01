@@ -89,23 +89,25 @@ export async function activatePoolHeat() {
 
     await guesty.authenticate();
     const reservations = await guesty.getReservations(0, 2, ['money.invoiceItems','status']);
-    let command = reservations.results
+    const heatShouldBeOn = reservations.results
         .filter(r => r.status == 'confirmed' && !!r.guest && r.checkIn < limit && r.checkOut > now && r.money.invoiceItems.filter(i => i.title.toLowerCase().contains('pool')).length > 0)
-        .length > 0 ? 'off' : 'on';
+        .length > 0;
 
-    console.log(`Setting pool heat to ${command}`);
-    command = 'on';
+    console.log(`Pool heat should be on? ${heatShouldBeOn}`);
 
-    await smartthings.devices.executeCommand(config.SMARTTHINGS_POOL_ID, {
-        commands: [
-            {
+    if (heatShouldBeOn) {
+        try {
+            await smartthings.devices.executeCommand(config.SMARTTHINGS_POOL_ID, {
                 capability: 'switch',
-                command,
-                arguments: []
-            }
-        ]
-    });
-
+                command: 'on'
+            });
+        }
+        catch(e) {
+            console.error(e.message);
+            process.exit(1);
+        }
+    }
+    
     console.log('Done!');
 }
 
