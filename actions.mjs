@@ -89,7 +89,7 @@ export async function activatePoolHeat() {
 
     await guesty.authenticate();
     const reservations = await guesty.getReservations(0, 2, ['money.invoiceItems','status']);
-    const command = reservations.results
+    let command = reservations.results
         .filter(r => r.status == 'confirmed' && !!r.guest && r.checkIn < limit && r.checkOut > now && r.money.invoiceItems.filter(i => i.title.toLowerCase().contains('pool')).length > 0)
         .length > 0 ? 'off' : 'on';
 
