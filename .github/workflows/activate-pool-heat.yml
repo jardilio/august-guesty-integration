@@ -1,0 +1,39 @@
+name: Activate Pool Heat
+
+on:
+  push:
+  workflow_dispatch:
+  schedule: 
+   - cron: '0 */6 * * *'
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+env:
+  GUESTY_USERNAME: ${{ secrets.GUESTY_USERNAME }}
+  GUESTY_PASSWORD: ${{ secrets.GUESTY_PASSWORD }}
+  GUESTY_LISTING: ${{ secrets.GUESTY_LISTING }}
+  GUESTY_ACCOUNT: ${{ secrets.GUESTY_ACCOUNT }}
+  GUESTY_API_KEY: ${{ secrets.GUESTY_API_KEY }}
+
+jobs:
+  run:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    container: node:18-alpine
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: NPM Install
+        run: npm install
+
+      - name: 16F
+        continue-on-error: true
+        run: node . activatePoolHeat
+        env:
+          GUESTY_LISTING: ${{ secrets.GUESTY_LISTING_16F }}
+          SMARTTHINGS_TOKEN: ${{ secrets.SMARTTHINGS_TOKEN }}
+          SMARTTHINGS_POOL_ID: ${{ secrets.SMARTTHINGS_POOL_ID_16F }}

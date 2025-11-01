@@ -1,5 +1,6 @@
 import GuestyClient from "./guesty-client.mjs"
 import AugustClient from "./august-client.mjs";
+import {BearerTokenAuthenticator, SmartThingsClient} from '@smartthings/core-sdk'
 import Prompt from 'prompt-sync';
 import * as config from "./config.mjs";
 import fs from "node:fs";
@@ -49,6 +50,8 @@ const august = new AugustClient({
     apiKey: config.AUGUST_API_KEY
 });
 
+const smartthings = new SmartThingsClient(new BearerTokenAuthenticator(config.SMARTTHINGS_TOKEN));
+
 export async function getLocks() {
     await august.session();
     let response = await august.fetch('users/locks/mine');
@@ -71,6 +74,38 @@ export async function validateAugust() {
     const prompt = Prompt();
     const code = prompt('What is the MFA code returned?');
     await august.validate(code);
+    console.log('Done!');
+}
+
+/**
+ * Turn on pool heater if was paid for in today's reservation
+ */
+export async function activatePoolHeat() {
+    const today = new Date(); 
+    const limit = new Date(today.setDate(today.getDate() + 1)).toISOString();
+    const now = new Date().toISOString();
+
+    console.log(`Finding reservations before ${limit}`);
+
+    await guesty.authenticate();
+    const reservations = await guesty.getReservations(0, 2, ['money.invoiceItems','status']);
+    const command = reservations.results
+        .filter(r => r.status == 'confirmed' && !!r.guest && r.checkIn < limit && r.checkOut > now && r.money.invoiceItems.filter(i => i.title.toLowerCase().contains('pool')).length > 0)
+        .length > 0 ? 'off' : 'on';
+
+    console.log(`Setting pool heat to ${command}`);
+    command = 'on';
+
+    await smartthings.devices.executeCommand(config.SMARTTHINGS_POOL_ID, {
+        commands: [
+            {
+                capability: 'switch',
+                command,
+                arguments: []
+            }
+        ]
+    });
+
     console.log('Done!');
 }
 
