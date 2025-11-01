@@ -90,11 +90,11 @@ export async function activatePoolHeat() {
     await guesty.authenticate();
     const reservations = await guesty.getReservations(0, 2, ['money.invoiceItems','status']);
     const heatShouldBeOn = reservations.results
-        .filter(r => r.status == 'confirmed' && !!r.guest && r.checkIn < limit && r.checkOut > now)
         .filter(r => {
-            console.log(`   ${r.checkIn}: ${r.money.invoiceItems.map(i => i.title).join(', ')}`);
-            return r.money.invoiceItems.filter(i => i.title.toLowerCase().contains('pool')).length > 0;
+            console.log(`   ${r.checkIn} - ${r.checkOut} (${r.status}): ${r.money.invoiceItems.map(i => i.title).join(', ')}`);
+            return r.status == 'confirmed' && r.checkIn < limit && r.checkOut > now;
         })
+        .filter(r => r.money.invoiceItems.filter(i => i.title.toLowerCase().contains('pool')).length > 0)
         .length > 0;
 
     console.log(`Pool heat should be on? ${heatShouldBeOn}`);
