@@ -94,7 +94,7 @@ export async function activatePoolHeat() {
             console.log(`   ${r.checkIn} - ${r.checkOut} (${r.status}): ${r.money.invoiceItems.map(i => i.title).join(', ')}`);
             return r.status == 'confirmed' && r.checkIn < limit && r.checkOut > now;
         })
-        .filter(r => r.money.invoiceItems.filter(i => i.title.toLowerCase().contains('pool')).length > 0)
+        .filter(r => r.money.invoiceItems.filter(i => i.title.toLowerCase().includes('pool')).length > 0)
         .length > 0;
 
     console.log(`Pool heat should be on? ${heatShouldBeOn}`);
