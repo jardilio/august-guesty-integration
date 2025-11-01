@@ -88,7 +88,7 @@ export async function activatePoolHeat() {
     console.log(`Finding reservations before ${limit}`);
 
     await guesty.authenticate();
-    const reservations = await guesty.getReservations(0, 2, ['money.invoiceItems','status']);
+    const reservations = await guesty.getReservations(0, 2, ['checkIn','checkOut','money.invoiceItems','status']);
     const heatShouldBeOn = reservations.results
         .filter(r => {
             console.log(`   ${r.checkIn} - ${r.checkOut} (${r.status}): ${r.money.invoiceItems.map(i => i.title).join(', ')}`);
