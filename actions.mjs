@@ -309,11 +309,11 @@ function fixReservationMoney(r) {
 	const accommodationFare = r.money.invoiceItems
 		.filter(i => i.title.toLowerCase().includes('accommodation'))
 		.map(i => i.amount)
-		.reduce((total, current) => total + value, 0);
+		.reduce((total, current) => total + current, 0);
 	const hostChannelFees = r.money.invoiceItems
 		.filter(i => i.title.toLowerCase().includes('host channel'))
 		.map(i => Math.abs(i.amount)) // some channels consider this negative, others positive
-		.reduce((total, current) => total + value, 0);
+		.reduce((total, current) => total + current, 0);
 	const vat = r.money.invoiceItems
 		.filter(i => i.title.toLowerCase() == 'vat')
 		.map(i => i.amount)
