@@ -322,7 +322,11 @@ function fixReservationMoney(r) {
 		.filter(i => i.title.toLowerCase().includes('service charge'))
 		.map(i => i.amount)
 		.reduce((total, current) => total + current, 0);
-	const rentalPayment = accommodationFare - hostChannelFees - vat - serviceCharges;
+	const discounts = r.money.invoiceItems
+		.filter(i => i.title.toLowerCase().includes('discount'))
+		.map(i => Math.abs(i.amount))
+		.reduce((total, current) => total + current, 0);
+	const rentalPayment = accommodationFare - hostChannelFees - vat - serviceCharges - discounts;
 	const commission = rentalPayment * .2;
 	const ownerRevenue = r.money.invoiceItems
 		.filter(i => {
