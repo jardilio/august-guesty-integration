@@ -449,7 +449,11 @@ export async function exportReservationReports() {
                     UsDollars.format(r.money.adjustments.taxableGross),
                     UsDollars.format(r.money.adjustments.creditCardFees),
                     UsDollars.format(r.money.adjustments.insuranceFees),
-                    UsDollars.format(r.money.adjustments.hostChannelFees)
+                    UsDollars.format(r.money.adjustments.hostChannelFees),
+					UsDollars.format(r.money.adjustments.accommodationFare),
+					UsDollars.format(r.money.adjustments.rentalPayment),
+					UsDollars.format(r.money.adjustments.commission),
+					UsDollars.format(r.money.adjustments.ownerRevenue)
                 ];
             });
         rows.push.apply(rows, results);
@@ -477,7 +481,11 @@ export async function exportReservationReports() {
         'money.adjusted.taxableGross',
         'money.adjusted.creditCardFees',
         'money.adjusted.insuranceFees',
-        'money.adjusted.hostChannelFees'
+        'money.adjusted.hostChannelFees',
+        'money.adjusted.hostChannelFees',
+        'money.adjusted.accommodationFare',
+        'money.adjusted.rentalPayment',
+        'money.adjusted.ownerRevenue'
     )));
     
     await sheets.spreadsheets.values.clear({
