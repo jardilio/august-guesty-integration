@@ -334,7 +334,7 @@ function fixReservationMoney(r) {
 			return title.includes('pool');
 		})
 		.map(i => i.amount)
-		.reduce((total, value) => total + value, rentalPayment - commissionFee);
+		.reduce((total, value) => total + value, rentalPayment - commission);
 
     const adjustments = {
         hostChannelFees,
