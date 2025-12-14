@@ -323,7 +323,7 @@ function fixReservationMoney(r) {
 		.map(i => i.amount)
 		.reduce((total, current) => total + current, 0);
 	const rentalPayment = accommodationFare - hostChannelFees - vat - serviceCharges;
-	const commission = accommodationFare * .2;
+	const commission = rentalPayment * .2;
 	const ownerRevenue = r.money.invoiceItems
 		.filter(i => {
 			const title = i.title.toLowerCase();
