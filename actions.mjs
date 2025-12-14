@@ -289,7 +289,7 @@ function getCalendarEventFromReservation(r) {
         end: {dateTime: r.checkOut},
         location: r.listing.address.full,
         summary: r.guest.fullName,
-        description: `${r.guest.fullName} is ${r.isReturningGuest ? 'returning' : 'new'} guest with ${r.guestsCount} total guests staying at ${r.listing.nickname} for ${r.nightsCount} nights. Reservation ${r.confirmationCode} is ${r.status} on ${r.source} for a total cost of ${UsDollars.format(r.money.hostPayout)} with a net income of ${UsDollars.format(r.money.netIncome)} and estimated owner revenue of ${UsDollars.format(r.money.ownerRevenue)}. The average nightly revenue is ${UsDollars.format(r.money.ownerRevenue / r.nightsCount)} per night.\n${r.money.invoiceItems.map(i => `\n${i.title}: ${UsDollars.format(i.amount || 0)}`).sort().join('')}`,
+        description: `${r.guest.fullName} is ${r.isReturningGuest ? 'returning' : 'new'} guest with ${r.guestsCount} total guests staying at ${r.listing.nickname} for ${r.nightsCount} nights. Reservation ${r.confirmationCode} is ${r.status} on ${r.source} for a total cost of ${UsDollars.format(r.money.hostPayout)} with an accommodation fare of ${UsDollars.format(r.money.adjustments.accommodationFare)}, commission fee of ${UsDollars.format(r.money.commission)}, and estimated owner revenue of ${UsDollars.format(r.money.ownerRevenue)}. The average nightly revenue is ${UsDollars.format(r.money.ownerRevenue / r.nightsCount)} per night.\n${r.money.invoiceItems.map(i => `\n${i.title}: ${UsDollars.format(i.amount || 0)}`).sort().join('')}`,
         status: status
     };
 
@@ -306,8 +306,38 @@ const   STATE_TAX_RATE = 0.065,
 function fixReservationMoney(r) {
     if (r.adjustments) return r;
 
+	const accommodationFare = r.money.invoiceItems
+		.filter(i => i.title.toLowerCase().contains('accommodation'))
+		.map(i => i.amount)
+		.reduce((total, current) => total + value, 0);
+	const hostChannelFees = r.money.invoiceItems
+		.filter(i => i.title.toLowerCase().contains('host channel'))
+		.map(i => Math.abs(i.amount)) // some channels consider this negative, others positive
+		.reduce((total, current) => total + value, 0);
+	const vat = r.money.invoiceItems
+		.filter(i => i.title.toLowerCase() == 'vat')
+		.map(i => i.amount)
+		.reduce((total, current) => total + current, 0);
+	const serviceCharges = r.money.invoiceItems
+		.filter(i => i.title.toLowerCase() == 'service charge')
+		.map(i => i.amount)
+		.reduce((total, current) => total + current, 0);
+	const rentalPayment = accommodationFare - hostChannelFees - vat - serviceCharges;
+	const commission = accommodationFare * .2;
+	const ownerRevenue = r.money.invoiceItems
+		.filter(i => {
+			const title = i.title.toLowerCase();
+			if (title.contains('early check')) {
+				i.amount = i.amount / 2;
+				return true;
+			}
+			return title.contains('pool');
+		})
+		.map(i => i.amount)
+		.reduce((total, value) => total + value, rentalPayment - commissionFee);
+
     const adjustments = {
-        hostChannelFees: Math.abs(r.money.invoiceItems.reduce((value, i) => i.title.toLowerCase() == 'host channel fee' ? i.amount : value, r.money.hostPayout * HOST_CHANNEL_RATE)),
+        hostChannelFees,
         creditCardFees: r.source.toLowerCase().startsWith('airbnb') ? 0 : r.money.hostPayout * CREDIT_CARD_RATE,
         insuranceFees: r.money.invoiceItems.reduce((value, i) => {
             switch(i.title.toLowerCase()) {
@@ -318,15 +348,18 @@ function fixReservationMoney(r) {
                     return value;
             }
         }, 0),
-        vat: r.money.invoiceItems.reduce((value, i) => i.title.toLowerCase() == 'vat' ? i.amount : value, 0),
+        vat,
         fareCleaning: r.nightsCount > 7 ? 265 : 165,
         grossWithTaxes: 0,
         taxableGross: 0,
         stateTaxes: 0,
         countyTaxes: 0,
-        commission: 0,
-        ownerRevenue: 0,
-        netIncome: 0
+        commission,
+        ownerRevenue,
+        netIncome: 0,
+		accommodationFare,
+		serviceCharges,
+		rentalPayment
     };
 
     adjustments.grossWithTaxes = r.money.hostPayout - (r.source.toLowerCase().startsWith('airbnb') ? 0 : adjustments.hostChannelFees) - adjustments.creditCardFees - adjustments.insuranceFees;
@@ -334,8 +367,8 @@ function fixReservationMoney(r) {
     adjustments.stateTaxes = adjustments.vat > 0 ? adjustments.taxableGross * STATE_TAX_RATE : 0;
     adjustments.countyTaxes = adjustments.taxableGross * COUNTY_TAX_RATE;
     adjustments.netIncome = adjustments.grossWithTaxes - adjustments.stateTaxes - adjustments.countyTaxes - adjustments.fareCleaning;
-    adjustments.commission = adjustments.netIncome * 0.2;
-    adjustments.ownerRevenue = adjustments.netIncome * 0.8;
+    //adjustments.commission = adjustments.netIncome * 0.2;
+    //adjustments.ownerRevenue = adjustments.netIncome * 0.8;
     
     r.money.netIncome = adjustments.netIncome;
     r.money.ownerRevenue = adjustments.ownerRevenue;
