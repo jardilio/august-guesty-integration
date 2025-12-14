@@ -307,11 +307,11 @@ function fixReservationMoney(r) {
     if (r.adjustments) return r;
 
 	const accommodationFare = r.money.invoiceItems
-		.filter(i => i.title.toLowerCase().contains('accommodation'))
+		.filter(i => i.title.toLowerCase().includes('accommodation'))
 		.map(i => i.amount)
 		.reduce((total, current) => total + value, 0);
 	const hostChannelFees = r.money.invoiceItems
-		.filter(i => i.title.toLowerCase().contains('host channel'))
+		.filter(i => i.title.toLowerCase().includes('host channel'))
 		.map(i => Math.abs(i.amount)) // some channels consider this negative, others positive
 		.reduce((total, current) => total + value, 0);
 	const vat = r.money.invoiceItems
@@ -319,7 +319,7 @@ function fixReservationMoney(r) {
 		.map(i => i.amount)
 		.reduce((total, current) => total + current, 0);
 	const serviceCharges = r.money.invoiceItems
-		.filter(i => i.title.toLowerCase() == 'service charge')
+		.filter(i => i.title.toLowerCase().includes('service charge'))
 		.map(i => i.amount)
 		.reduce((total, current) => total + current, 0);
 	const rentalPayment = accommodationFare - hostChannelFees - vat - serviceCharges;
@@ -327,11 +327,11 @@ function fixReservationMoney(r) {
 	const ownerRevenue = r.money.invoiceItems
 		.filter(i => {
 			const title = i.title.toLowerCase();
-			if (title.contains('early check')) {
+			if (title.includes('early check')) {
 				i.amount = i.amount / 2;
 				return true;
 			}
-			return title.contains('pool');
+			return title.includes('pool');
 		})
 		.map(i => i.amount)
 		.reduce((total, value) => total + value, rentalPayment - commissionFee);
