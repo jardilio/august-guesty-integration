@@ -331,13 +331,15 @@ function fixReservationMoney(r) {
 	const ownerRevenue = r.money.invoiceItems
 		.filter(i => {
 			const title = i.title.toLowerCase();
-			if (title.includes('early check')) {
-				i.amount = i.amount / 2;
-				return true;
-			}
-			return title.includes('pool');
+			return title.includes('early check') || title.includes('pool');
 		})
-		.map(i => i.amount)
+		.map(i => {
+            const title = i.title.toLowerCase();
+			if (title.includes('early check')) {
+				return i.amount / 2;
+			}
+			return i.amount;
+        })
 		.reduce((total, value) => total + value, rentalPayment - commission);
 
     const adjustments = {
