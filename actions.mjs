@@ -486,9 +486,9 @@ export async function exportReservationReports() {
         'money.adjusted.creditCardFees',
         'money.adjusted.insuranceFees',
         'money.adjusted.hostChannelFees',
-        'money.adjusted.hostChannelFees',
         'money.adjusted.accommodationFare',
         'money.adjusted.rentalPayment',
+        'money.adjusted.commission',
         'money.adjusted.ownerRevenue'
     )));
     
