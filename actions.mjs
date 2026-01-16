@@ -307,7 +307,7 @@ function fixReservationMoney(r) {
     if (r.adjustments) return r;
 
 	const accommodationFare = r.money.invoiceItems
-		.filter(i => i.title.toLowerCase().includes('accommodation'))
+		.filter(i => i.title.toLowerCase().includes('accommodation') || i.title.toLowerCase().includes('markup'))
 		.map(i => i.amount)
 		.reduce((total, current) => total + current, 0);
 	const hostChannelFees = r.money.invoiceItems
@@ -324,10 +324,10 @@ function fixReservationMoney(r) {
 		.reduce((total, current) => total + current, 0);
 	const discounts = r.money.invoiceItems
 		.filter(i => i.title.toLowerCase().includes('discount'))
-		.map(i => Math.abs(i.amount))
+		.map(i => Math.abs(i.amount)) // convert this to a postive value for calculations
 		.reduce((total, current) => total + current, 0);
 	const rentalPayment = accommodationFare - hostChannelFees - vat - serviceCharges - discounts;
-	const commission = rentalPayment * .2;
+	const commission = rentalPayment * .2; // 20% property management fee based on rental amount
 	const ownerRevenue = r.money.invoiceItems
 		.filter(i => {
 			const title = i.title.toLowerCase();
@@ -335,8 +335,8 @@ function fixReservationMoney(r) {
 		})
 		.map(i => {
             const title = i.title.toLowerCase();
-			if (title.includes('early check')) {
-				return i.amount / 2;
+			if (title.includes('early check')) { // name is a bit different depending on channel
+				return i.amount / 2; // property manager gets 50% of early check in fees
 			}
 			return i.amount;
         })
