@@ -199,7 +199,7 @@ export async function createCalendarEvents() {
     const existingEvents = Object.fromEntries((await calendar.events.list({
         calendarId: config.GOOGLE_CALENDAR_ID,
         timeMin: (resEvents[0] && resEvents[0].start) || new Date().toISOString(),
-        maxResults: 100,
+        maxResults: 150,
         singleEvents: true,
         orderBy: 'startTime',
     })).data.items
