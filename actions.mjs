@@ -310,16 +310,22 @@ function fixReservationMoney(r) {
 		.filter(i => i.title.toLowerCase().includes('accommodation') || i.title.toLowerCase().includes('markup'))
 		.map(i => i.amount)
 		.reduce((total, current) => total + current, 0);
+	const serviceCharges = r.money.invoiceItems
+		.filter(i => i.title.toLowerCase().includes('service charge'))
+		.map(i => i.amount)
+		.reduce((total, current) => total + current, 0);
+	const cleaningFees = r.money.invoiceItems
+		.filter(i => i.title.toLowerCase().includes('cleaning'))
+		.map(i => i.amount)
+		.reduce((total, current) => total + current, 0);
 	const hostChannelFees = r.money.invoiceItems
 		.filter(i => i.title.toLowerCase().includes('host channel'))
 		.map(i => Math.abs(i.amount)) // some channels consider this negative, others positive
-		.reduce((total, current) => total + current, 0);
+		.reduce((total, current) => total + current, 0) || 
+        // Booking.com doesn't have invoice item for host channel fees, its taken off topline
+        r.source.toLowerCase() == "booking.com" ? (accommodationFare+serviceCharges+cleaningFees) * .15 : 0;
 	const vat = r.money.invoiceItems
 		.filter(i => i.title.toLowerCase() == 'vat')
-		.map(i => i.amount)
-		.reduce((total, current) => total + current, 0);
-	const serviceCharges = r.money.invoiceItems
-		.filter(i => i.title.toLowerCase().includes('service charge'))
 		.map(i => i.amount)
 		.reduce((total, current) => total + current, 0);
 	const discounts = r.money.invoiceItems
