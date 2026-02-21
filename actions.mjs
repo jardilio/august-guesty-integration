@@ -27,7 +27,8 @@ const DEFAULT_RESERVATION_FIELDS = [
     'guestsCount',
     'status',
     'checkIn',
-    'checkOut'
+    'checkOut',
+    'listing.nickname'
 ];
 
 const UsDollars = new Intl.NumberFormat('en-US', {
@@ -183,7 +184,7 @@ export async function createGuestPins() {
 
 export async function createCalendarEvents() {
     await guesty.authenticate();
-    const resEvents = (await guesty.getReservations(0, 25, ['listing.address.full','listing.nickname'].concat(DEFAULT_RESERVATION_FIELDS)))
+    const resEvents = (await guesty.getReservations(0, 25, ['listing.address.full'].concat(DEFAULT_RESERVATION_FIELDS)))
         .results
         .filter(r => !!r.guest && !!r.confirmationCode)
         .map(r => getCalendarEventFromReservation(r));
