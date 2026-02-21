@@ -465,7 +465,8 @@ export async function exportReservationReports() {
 					UsDollars.format(r.money.adjustments.accommodationFare),
 					UsDollars.format(r.money.adjustments.rentalPayment),
 					UsDollars.format(r.money.adjustments.commission),
-					UsDollars.format(r.money.adjustments.ownerRevenue)
+					UsDollars.format(r.money.adjustments.ownerRevenue),
+                    r.listing.nickname
                 ];
             });
         rows.push.apply(rows, results);
@@ -497,7 +498,8 @@ export async function exportReservationReports() {
         'money.adjusted.accommodationFare',
         'money.adjusted.rentalPayment',
         'money.adjusted.commission',
-        'money.adjusted.ownerRevenue'
+        'money.adjusted.ownerRevenue',
+        'property'
     )));
     
     await sheets.spreadsheets.values.clear({
