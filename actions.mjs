@@ -456,6 +456,7 @@ export async function exportReservationReports() {
                     r.checkOut.substring(0,4),
                     r.checkOut.substring(5, 7),
                     r.nightsCount - checkInMonthNights,
+                    r.listing.nickname,
                     UsDollars.format(nightlyOwnerRevenue * (r.nightsCount - checkInMonthNights)),
                     UsDollars.format(r.money.adjustments.stateTaxes),
                     UsDollars.format(r.money.adjustments.countyTaxes),
@@ -466,8 +467,7 @@ export async function exportReservationReports() {
 					UsDollars.format(r.money.adjustments.accommodationFare),
 					UsDollars.format(r.money.adjustments.rentalPayment),
 					UsDollars.format(r.money.adjustments.commission),
-					UsDollars.format(r.money.adjustments.ownerRevenue),
-                    r.listing.nickname
+					UsDollars.format(r.money.adjustments.ownerRevenue)
                 ];
             });
         rows.push.apply(rows, results);
@@ -499,8 +499,7 @@ export async function exportReservationReports() {
         'money.adjusted.accommodationFare',
         'money.adjusted.rentalPayment',
         'money.adjusted.commission',
-        'money.adjusted.ownerRevenue',
-        'property'
+        'money.adjusted.ownerRevenue'
     )));
     
     await sheets.spreadsheets.values.clear({
