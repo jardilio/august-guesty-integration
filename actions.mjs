@@ -448,6 +448,7 @@ export async function exportReservationReports() {
                     r.status,
                     r.checkIn.substring(0, 10),
                     r.checkOut.substring(0, 10),
+					r.listing.nickname,
                     UsDollars.format(nightlyOwnerRevenue),
                     checkInYear,
                     checkInMonth,
@@ -456,7 +457,6 @@ export async function exportReservationReports() {
                     r.checkOut.substring(0,4),
                     r.checkOut.substring(5, 7),
                     r.nightsCount - checkInMonthNights,
-                    r.listing.nickname,
                     UsDollars.format(nightlyOwnerRevenue * (r.nightsCount - checkInMonthNights)),
                     UsDollars.format(r.money.adjustments.stateTaxes),
                     UsDollars.format(r.money.adjustments.countyTaxes),
@@ -504,12 +504,12 @@ export async function exportReservationReports() {
     
     await sheets.spreadsheets.values.clear({
         spreadsheetId: config.GOOGLE_SHEET_ID,
-        range: 'Data!A:ZZ'
+        range: 'Reservations!A:ZZ'
     });
 
     await sheets.spreadsheets.values.append({
         spreadsheetId: config.GOOGLE_SHEET_ID,
-        range: 'Data!A1',
+        range: 'Reservations!A1',
         valueInputOption: 'USER_ENTERED',
         insertDataOption: 'OVERWRITE',
         resource: {
